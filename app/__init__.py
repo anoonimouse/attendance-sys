@@ -24,14 +24,14 @@ def create_app():
     # -------------------------
     # Flask Config
     # -------------------------
-    app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY")
+    app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-in-production")
     app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///app.db")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     # OAuth Config
     app.config["GOOGLE_CLIENT_ID"] = os.getenv("GOOGLE_CLIENT_ID")
     app.config["GOOGLE_CLIENT_SECRET"] = os.getenv("GOOGLE_CLIENT_SECRET")
-    app.config["ALLOWED_DOMAIN"] = os.getenv("ALLOWED_DOMAIN", "").lower()
+    app.config["ALLOWED_DOMAIN"] = os.getenv("ALLOWED_DOMAIN", "iitj.ac.in").lower()
 
     # Admin list (super admins)
     admins_raw = os.getenv("ADMINS", "")
@@ -39,6 +39,7 @@ def create_app():
     app.config["ADMINS"] = admins_list
 
     print("Super Admins:", app.config["ADMINS"])
+    print("Allowed Domain:", app.config["ALLOWED_DOMAIN"])
 
 
     # -------------------------
@@ -62,14 +63,24 @@ def create_app():
     # -------------------------
     from .auth import auth_bp, init_oauth
     from .main import main_bp
-    from .admin import admin_bp  # (You will add this file later)
+    from .admin import admin_bp
+    from .teacher import teacher_bp
 
     # VERY IMPORTANT: init OAuth after app is created
     init_oauth(app)
 
+    # Register blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
-    app.register_blueprint(admin_bp)
+    app.register_blueprint(admin_bp, url_prefix="/admin")
+    app.register_blueprint(teacher_bp, url_prefix="/teacher")
+
+    print("\n" + "="*60)
+    print("REGISTERED BLUEPRINTS:")
+    print("="*60)
+    for blueprint_name, blueprint in app.blueprints.items():
+        print(f"✓ {blueprint_name:15} -> {blueprint.url_prefix or '/'}")
+    print("="*60 + "\n")
 
     # -------------------------
     # Create DB Tables

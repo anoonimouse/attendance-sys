@@ -1,7 +1,7 @@
 # app/auth.py
 
 from flask import Blueprint, redirect, url_for, session, request, flash, current_app
-from flask_login import login_user, logout_user
+from flask_login import login_user, logout_user, current_user
 from authlib.integrations.flask_client import OAuth
 from .models import User
 from . import db
@@ -30,6 +30,10 @@ def init_oauth(app):
 
 @auth_bp.route("/login")
 def login():
+    # If already logged in, redirect to appropriate dashboard
+    if current_user.is_authenticated:
+        return redirect(url_for("main.dashboard"))
+    
     try:
         redirect_uri = url_for("auth.callback", _external=True)
         return oauth.google.authorize_redirect(redirect_uri)
@@ -97,9 +101,21 @@ def callback():
             db.session.add(user)
             db.session.commit()
 
+        # 7️⃣ Check if banned
+        if user.is_banned:
+            flash("Your account has been banned. Contact administrator.", "danger")
+            return redirect("/")
+
         login_user(user)
         flash("Logged in successfully.", "success")
-        return redirect(url_for("main.dashboard"))
+        
+        # 8️⃣ Route based on role
+        if user.role == "teacher":
+            return redirect(url_for("teacher.dashboard"))
+        elif user.role == "admin":
+            return redirect(url_for("admin.index"))
+        else:
+            return redirect(url_for("main.dashboard"))
 
     except Exception as e:
         flash(f"Login failed: {e}", "danger")

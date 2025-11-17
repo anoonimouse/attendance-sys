@@ -14,7 +14,33 @@ main_bp = Blueprint("main", __name__)
 # ---------------------------------------------------------------------
 @main_bp.route("/")
 def index():
+    """Landing page - redirect if logged in"""
+    if current_user.is_authenticated:
+        return redirect(url_for("main.route_user"))
     return render_template("index.html")
+
+
+@main_bp.route("/route")
+@login_required
+def route_user():
+    """Route user to correct dashboard based on role"""
+    if current_user.role == "teacher":
+        return redirect(url_for("teacher.dashboard"))
+    elif current_user.role == "admin":
+        return redirect(url_for("admin.index"))
+    else:
+        return redirect(url_for("main.student_dashboard"))
+
+
+@main_bp.route("/student/dashboard")
+@login_required
+def student_dashboard():
+    """Student-only dashboard"""
+    # Redirect teachers and admins to their dashboards
+    if current_user.role == "teacher":
+        return redirect(url_for("teacher.dashboard"))
+    elif current_user.role == "admin":
+        return redirect(url_for("admin.index"))
 
 
 # ---------------------------------------------------------------------
@@ -23,6 +49,12 @@ def index():
 @main_bp.route("/dashboard")
 @login_required
 def dashboard():
+    """Student dashboard - redirect teachers/admins to their own dashboards"""
+    if current_user.role == "teacher":
+        return redirect(url_for("teacher.dashboard"))
+    elif current_user.role == "admin":
+        return redirect(url_for("admin.index"))
+    
     now = datetime.utcnow()
 
     active = AttendanceSlot.query.filter(
@@ -65,6 +97,10 @@ def mark_attendance():
         method: "pin" | "qr"
     }
     """
+    # Check if user is banned
+    if current_user.is_banned:
+        return jsonify({"ok": False, "msg": "Your account is banned"}), 403
+    
     data = request.get_json() or {}
     fingerprint = data.get("fingerprint")
     method = data.get("method", "pin")
@@ -146,7 +182,7 @@ def slot_qr(slot_id):
     """
 
     # 🔐 TEACHER ONLY
-    if not current_user.is_teacher():
+    if not current_user.is_teacher() and not current_user.is_admin():
         return "Unauthorized", 403
 
     slot = AttendanceSlot.query.get_or_404(slot_id)
