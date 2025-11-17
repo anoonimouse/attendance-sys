@@ -1,79 +1,117 @@
-from flask import Blueprint, redirect, url_for, session, flash, current_app
+# app/auth.py
+
+from flask import Blueprint, redirect, url_for, session, request, flash, current_app
+from flask_login import login_user, logout_user
 from authlib.integrations.flask_client import OAuth
-from flask_login import login_user, logout_user, login_required
 from .models import User
 from . import db
-import secrets
+import requests
 
-auth_bp = Blueprint("auth", __name__)
+auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
+
 oauth = OAuth()
 
-@auth_bp.record_once
-def on_load(state):
-    oauth.init_app(state.app)
+def init_oauth(app):
+    """Called by create_app() inside __init__.py"""
+    oauth.init_app(app)
+
     oauth.register(
         name="google",
-        client_id=state.app.config.get("GOOGLE_CLIENT_ID"),
-        client_secret=state.app.config.get("GOOGLE_CLIENT_SECRET"),
+        client_id=app.config["GOOGLE_CLIENT_ID"],
+        client_secret=app.config["GOOGLE_CLIENT_SECRET"],
         server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
-        client_kwargs={"scope": "openid email profile"}
+        client_kwargs={"scope": "openid email profile"},
     )
+
+
+# -----------------------
+# LOGIN ROUTE
+# -----------------------
 
 @auth_bp.route("/login")
 def login():
-    # Generate nonce
-    nonce = secrets.token_urlsafe(16)
-    session["nonce"] = nonce
+    try:
+        redirect_uri = url_for("auth.callback", _external=True)
+        return oauth.google.authorize_redirect(redirect_uri)
+    except Exception as e:
+        flash(f"OAuth initialization failed: {e}", "danger")
+        return redirect("/")
 
-    redirect_uri = url_for("auth.callback", _external=True)
 
-    return oauth.google.authorize_redirect(
-        redirect_uri,
-        nonce=nonce
-    )
+# -----------------------
+# GOOGLE CALLBACK
+# -----------------------
 
-@auth_bp.route("/auth/callback")
+@auth_bp.route("/callback")
 def callback():
-    token = oauth.google.authorize_access_token()
+    """Handles the Google OAuth callback"""
+    try:
+        # 1️⃣ Step: Exchange code for token
+        token = oauth.google.authorize_access_token()
+        client = oauth.google
 
-    # Retrieve stored nonce
-    nonce = session.get("nonce")
-    if not nonce:
-        flash("Login session expired. Try again.", "error")
-        return redirect(url_for("main.index"))
+        # 2️⃣ Fetch Google OpenID metadata
+        metadata = client.load_server_metadata()
 
-    # Parse + verify ID token with nonce
-    userinfo = oauth.google.parse_id_token(token, nonce=nonce)
-    if not userinfo:
-        flash("Failed to verify Google login.", "error")
-        return redirect(url_for("main.index"))
+        # 3️⃣ Secure userinfo endpoint
+        userinfo_url = metadata.get("userinfo_endpoint")
 
-    email = userinfo.get("email")
-    domain = email.split("@")[-1]
-    allowed = current_app.config.get("ALLOWED_DOMAIN")
+        if not userinfo_url:
+            flash("Google login failed: userinfo endpoint missing.", "danger")
+            return redirect(url_for("auth.login"))
 
-    if allowed.lower() != domain.lower():
-        flash(f"Only @{allowed} emails allowed.", "error")
-        return redirect(url_for("main.index"))
-
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        user = User(
-            name=userinfo.get("name"),
-            email=email,
-            role="student"
+        # 4️⃣ Request user info
+        resp = requests.get(
+            userinfo_url,
+            headers={"Authorization": f"Bearer {token['access_token']}"}
         )
-        db.session.add(user)
-        db.session.commit()
 
-    login_user(user)
-    session.pop("nonce", None)
+        if resp.status_code != 200:
+            flash("Failed to fetch Google profile info.", "danger")
+            return redirect(url_for("auth.login"))
 
-    return redirect(url_for("main.dashboard"))
+        userinfo = resp.json()
+
+        email = userinfo.get("email")
+        name = userinfo.get("name")
+        hd = userinfo.get("hd")  # domain
+
+        if not email:
+            flash("Google login didn't return an email.", "danger")
+            return redirect(url_for("auth.login"))
+
+        # 5️⃣ Domain check
+        allowed = current_app.config.get("ALLOWED_DOMAIN")
+        if allowed and allowed.lower() != email.split("@")[-1].lower():
+            flash("Only institutional emails are allowed.", "danger")
+            return redirect(url_for("auth.login"))
+
+        # 6️⃣ Check if user exists
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            user = User(
+                name=name or email.split("@")[0],
+                email=email,
+                role="student"
+            )
+            db.session.add(user)
+            db.session.commit()
+
+        login_user(user)
+        flash("Logged in successfully.", "success")
+        return redirect(url_for("main.dashboard"))
+
+    except Exception as e:
+        flash(f"Login failed: {e}", "danger")
+        return redirect(url_for("auth.login"))
+
+
+# -----------------------
+# LOGOUT
+# -----------------------
 
 @auth_bp.route("/logout")
-@login_required
 def logout():
     logout_user()
-    flash("Logged out successfully!", "info")
-    return redirect(url_for("main.index"))
+    flash("Logged out successfully.", "success")
+    return redirect("/")

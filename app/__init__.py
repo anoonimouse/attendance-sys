@@ -1,78 +1,84 @@
+# app/__init__.py
+
 import os
-import pathlib
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-from dotenv import dotenv_values
+from dotenv import load_dotenv
 
 db = SQLAlchemy()
 login_manager = LoginManager()
-login_manager.login_view = "auth.login"
+
 
 def create_app():
-    # -------------------------------
-    # 1) Load .env file manually (WORKS ON WINDOWS)
-    # -------------------------------
-    root_path = pathlib.Path(__file__).parent.parent
-    env_path = root_path / ".env"
+    # -------------------------
+    # Load .env
+    # -------------------------
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    load_dotenv(os.path.join(base_dir, "..", ".env"))
 
-    # Read .env as dictionary
-    env_data = dotenv_values(env_path)
+    print("Loaded .env from:", os.path.join(base_dir, "..", ".env"))
 
-    print("Loaded .env from:", env_path)
-    print("ENV CONTENTS:", env_data)
+    app = Flask(__name__)
 
-    # Inject each .env key into os.environ
-    for key, value in env_data.items():
-        os.environ[key] = value
-
-    # -------------------------------
-    # 2) Create Flask App
-    # -------------------------------
-    app = Flask(
-        __name__,
-        template_folder="templates",
-        static_folder="static"
-    )
-
-    # -------------------------------
-    # 3) Apply Config Values
-    # -------------------------------
-    app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "dev-secret")
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///app.db")
+    # -------------------------
+    # Flask Config
+    # -------------------------
+    app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY")
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///app.db")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-    # IMPORTANT: Make sure Google OAuth values load!
-    app.config["GOOGLE_CLIENT_ID"] = os.environ.get("GOOGLE_CLIENT_ID")
-    app.config["GOOGLE_CLIENT_SECRET"] = os.environ.get("GOOGLE_CLIENT_SECRET")
-    app.config["ALLOWED_DOMAIN"] = os.environ.get("ALLOWED_DOMAIN", "iitj.ac.in")
+    # OAuth Config
+    app.config["GOOGLE_CLIENT_ID"] = os.getenv("GOOGLE_CLIENT_ID")
+    app.config["GOOGLE_CLIENT_SECRET"] = os.getenv("GOOGLE_CLIENT_SECRET")
+    app.config["ALLOWED_DOMAIN"] = os.getenv("ALLOWED_DOMAIN", "").lower()
 
-    # Debug print
-    print("CLIENT_ID =", app.config["GOOGLE_CLIENT_ID"])
-    print("CLIENT_SECRET =", app.config["GOOGLE_CLIENT_SECRET"])
-    print("ALLOWED_DOMAIN =", app.config["ALLOWED_DOMAIN"])
+    # Admin list (super admins)
+    admins_raw = os.getenv("ADMINS", "")
+    admins_list = [email.strip().lower() for email in admins_raw.split(",") if email.strip()]
+    app.config["ADMINS"] = admins_list
 
-    # -------------------------------
-    # 4) Init Extensions
-    # -------------------------------
+    print("Super Admins:", app.config["ADMINS"])
+
+
+    # -------------------------
+    # Init extensions
+    # -------------------------
     db.init_app(app)
     login_manager.init_app(app)
+    login_manager.login_view = "auth.login"
 
-    # -------------------------------
-    # 5) Register Blueprints
-    # -------------------------------
-    from .auth import auth_bp
+    # -------------------------
+    # User Loader
+    # -------------------------
+    from .models import User
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
+
+    # -------------------------
+    # Register Blueprints
+    # -------------------------
+    from .auth import auth_bp, init_oauth
     from .main import main_bp
-    from .teacher import teacher_bp
+    from .admin import admin_bp  # (You will add this file later)
+
+    # VERY IMPORTANT: init OAuth after app is created
+    init_oauth(app)
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
-    app.register_blueprint(teacher_bp, url_prefix="/teacher")
+    app.register_blueprint(admin_bp)
 
-    # -------------------------------
-    # 6) Create tables
-    # -------------------------------
+    # -------------------------
+    # Create DB Tables
+    # -------------------------
     with app.app_context():
-        db.create_all()
+        try:
+            db.create_all()
+            print("Database tables checked/created.")
+        except Exception as e:
+            print("Error creating tables:", e)
 
     return app

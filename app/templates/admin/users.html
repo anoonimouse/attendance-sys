@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Manage Users{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto py-10">
+
+<h1 class="text-3xl font-bold mb-6 text-slate-800">Manage Users</h1>
+
+<form method="get" class="mb-6">
+    <input type="text" name="q" value="{{ q }}"
+           placeholder="Search email"
+           class="border border-slate-300 px-3 py-2 rounded-lg w-64">
+    <button class="bg-cyan-600 text-white px-4 py-2 rounded-lg ml-2">Search</button>
+</form>
+
+<div class="bg-white rounded-xl shadow p-6">
+<table class="w-full text-left">
+    <thead>
+        <tr class="border-b text-gray-600">
+            <th class="py-2">Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Banned</th>
+            <th class="text-right">Actions</th>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% for u in users %}
+        <tr class="border-b">
+            <td class="py-3">{{ u.name or "—" }}</td>
+            <td>{{ u.email }}</td>
+            <td class="font-medium">{{ u.role }}</td>
+            <td>{% if u.is_banned %}<span class="text-red-600 font-semibold">Yes</span>{% else %}No{% endif %}</td>
+            <td class="py-3 text-right">
+
+                {% if u.role == 'student' %}
+                <button class="px-3 py-1 bg-slate-800 text-white rounded promote"
+                        data-id="{{ u.id }}">Promote</button>
+                {% elif u.role == 'teacher' %}
+                <button class="px-3 py-1 bg-slate-500 text-white rounded demote"
+                        data-id="{{ u.id }}">Demote</button>
+                {% endif %}
+
+                {% if u.is_banned %}
+                <button class="px-3 py-1 bg-green-600 text-white rounded unban"
+                        data-id="{{ u.id }}">Unban</button>
+                {% else %}
+                <button class="px-3 py-1 bg-red-600 text-white rounded ban"
+                        data-id="{{ u.id }}">Ban</button>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+</div>
+
+<script>
+async function action(url){
+    const res = await fetch(url, {method: "POST"});
+    return res.json();
+}
+
+document.addEventListener("click", async (e)=>{
+    let el = e.target;
+    if(el.matches(".promote, .demote, .ban, .unban")){
+        const uid = el.dataset.id;
+        const type = el.classList.contains("promote") ? "promote"
+                   : el.classList.contains("demote") ? "demote"
+                   : el.classList.contains("ban") ? "ban"
+                   : "unban";
+
+        if(!confirm("Confirm " + type + "?")) return;
+
+        let resp = await action(`/admin/user/${uid}/${type}`);
+        if(resp.ok){
+            alert(type + " done!");
+            location.reload();
+        } else {
+            alert(resp.msg || "Error");
+        }
+    }
+});
+</script>
+
+{% endblock %}

@@ -19,29 +19,52 @@
     .btn-cyan { background: var(--cyan); color: white; }
     .badge-active { background: linear-gradient(90deg,var(--cyan),#06b6d4); color: white; padding:4px 8px; border-radius:999px; font-weight:600; }
     /* toast placeholder */
-    #toast { position: fixed; right: 20px; bottom: 20px; z-index: 50; }
+    #toast { position: fixed; right: 20px; bottom: 20px; z-index: 50; width: 300px; }
   </style>
 </head>
 <body>
   <nav class="bg-white shadow-sm">
     <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+      
+      <!-- LEFT SIDE -->
       <div class="flex items-center space-x-3">
         <div class="text-2xl font-bold">Attendance</div>
         <div class="text-sm text-slate-500">Secure attendance management system</div>
+
+        <!-- ADMIN LINK (only if user is admin) -->
+        {% if current_user.is_authenticated and current_user.role == 'admin' %}
+          <a href="{{ url_for('admin.index') }}"
+             class="ml-6 text-sm font-semibold text-[var(--cyan)] hover:underline">
+             Admin Dashboard
+          </a>
+        {% endif %}
       </div>
+
+      <!-- RIGHT SIDE -->
       <div>
         {% if current_user.is_authenticated %}
           <div class="flex items-center gap-3">
+
+            <!-- Avatar -->
             <div class="w-10 h-10 bg-[#1E293B] text-white rounded-full flex items-center justify-center font-semibold">
               {{ current_user.name.split(' ')[0][:1] }}{{ (current_user.name.split(' ')[1][:1] if current_user.name.split(' ')|length>1 else '') }}
             </div>
+
+            <!-- Email -->
             <div class="text-sm text-slate-600">{{ current_user.email }}</div>
-            <a href="{{ url_for('auth.logout') }}" class="ml-4 border px-3 py-1 rounded text-sm">Logout</a>
+
+            <!-- Logout -->
+            <a href="{{ url_for('auth.logout') }}"
+               class="ml-4 border px-3 py-1 rounded text-sm hover:bg-slate-100">
+               Logout
+            </a>
           </div>
+
         {% else %}
           <a href="{{ url_for('auth.login') }}" class="px-4 py-2 btn-primary rounded">Sign in</a>
         {% endif %}
       </div>
+
     </div>
   </nav>
 
@@ -67,6 +90,7 @@
     function showToast(msg, kind="info") {
       const t = document.createElement("div");
       t.className = "card mb-2";
+      t.style.borderLeft = kind === "success" ? "4px solid #14B8A6" : "4px solid #EF4444";
       t.innerText = msg;
       document.getElementById("toast").appendChild(t);
       setTimeout(()=> t.remove(), 5000);

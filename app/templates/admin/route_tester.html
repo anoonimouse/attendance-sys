@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-2xl font-bold mb-2">Route Testing Dashboard</h1>
+    <p class="text-slate-600 mb-6">Click buttons to test navigation, redirects, permissions & auth behavior.</p>
+
+    <!-- ROLE DISPLAY -->
+    <div class="mb-6 card flex justify-between items-center">
+        <div>
+            <div class="font-semibold">Current User:</div>
+            <div class="text-slate-600">
+                {% if current_user.is_authenticated %}
+                    {{ current_user.email }} ({{ current_user.role }})
+                {% else %}
+                    Not logged in
+                {% endif %}
+            </div>
+        </div>
+        <div>
+            <a href="{{ url_for('auth.logout') }}" 
+               class="px-4 py-2 btn-primary rounded text-white">Logout</a>
+        </div>
+    </div>
+
+    <!-- TEST HELPER JS -->
+    <script>
+        async function testRoute(url, btn) {
+            btn.disabled = true;
+            btn.innerText = "Testing...";
+
+            try {
+                let res = await fetch(url, { method: "GET", credentials: "include" });
+
+                let color = res.status === 200 ? "bg-green-500" :
+                            res.status === 302 ? "bg-blue-500" :
+                            res.status === 401 || res.status === 403 ? "bg-red-500" :
+                            "bg-slate-600";
+
+                btn.innerHTML = `<span class="${color} text-white px-2 py-1 rounded text-xs">${res.status}</span> ${url}`;
+            } catch (err) {
+                btn.innerHTML = `<span class="bg-red-700 text-white px-2 py-1 rounded text-xs">ERR</span> ${url}`;
+            }
+
+            btn.disabled = false;
+        }
+    </script>
+
+    <!-- PUBLIC ROUTES -->
+    <h2 class="text-xl font-semibold mt-8 mb-3">Public Routes</h2>
+    <div class="grid grid-cols-1 gap-3">
+        <button onclick="testRoute('/', this)" class="card text-left p-3 hover:bg-slate-100">/ (Home)</button>
+        <button onclick="testRoute('/login', this)" class="card text-left p-3 hover:bg-slate-100">/login</button>
+    </div>
+
+    <!-- STUDENT ROUTES -->
+    <h2 class="text-xl font-semibold mt-8 mb-3">Student Routes</h2>
+    <p class="text-slate-500 mb-2 text-sm">Login as a student to test these</p>
+    <div class="grid grid-cols-1 gap-3">
+        <button onclick="testRoute('/dashboard', this)" class="card p-3 hover:bg-slate-100">/dashboard</button>
+        <button onclick="testRoute('/attendance/history', this)" class="card p-3 hover:bg-slate-100">/attendance/history</button>
+        <button onclick="testRoute('/attendance/mark', this)" class="card p-3 hover:bg-slate-100">POST /attendance/mark (needs JS)</button>
+        <button onclick="testRoute('/qr/mark?slot_id=1&token=test', this)" class="card p-3 hover:bg-slate-100">/qr/mark (sample)</button>
+    </div>
+
+    <!-- TEACHER ROUTES -->
+    <h2 class="text-xl font-semibold mt-8 mb-3">Teacher Routes</h2>
+    <p class="text-sm text-slate-500 mb-2">Login as a teacher to test these</p>
+    <div class="grid grid-cols-1 gap-3">
+        <button onclick="testRoute('/teacher/dashboard', this)" class="card p-3 hover:bg-slate-100">/teacher/dashboard</button>
+        <button onclick="testRoute('/teacher/slot/create', this)" class="card p-3 hover:bg-slate-100">/teacher/slot/create</button>
+        <button onclick="testRoute('/teacher/rooms', this)" class="card p-3 hover:bg-slate-100">/teacher/rooms</button>
+    </div>
+
+    <!-- ADMIN ROUTES -->
+    <h2 class="text-xl font-semibold mt-8 mb-3">Admin Routes</h2>
+    <p class="text-sm text-slate-500 mb-2">Visible only to Super Admins (ADMINS in .env)</p>
+
+    {% if current_user.email in current_app.config["ADMINS"] %}
+    <div class="grid grid-cols-1 gap-3">
+        <button onclick="testRoute('/admin', this)" class="card p-3 hover:bg-slate-100">/admin</button>
+        <button onclick="testRoute('/admin/users', this)" class="card p-3 hover:bg-slate-100">/admin/users</button>
+        <button onclick="testRoute('/admin/promote/1', this)" class="card p-3 hover:bg-slate-100">/admin/promote/&lt;id&gt;</button>
+        <button onclick="testRoute('/admin/ban/1', this)" class="card p-3 hover:bg-slate-100">/admin/ban/&lt;id&gt;</button>
+    </div>
+    {% else %}
+    <div class="text-red-600 font-semibold">
+        You are not a Super Admin. Add your email in ADMINS= in .env
+    </div>
+    {% endif %}
+
+    <!-- QUICK LOGIN SIMULATOR INFO -->
+    <div class="mt-10 p-4 card">
+        <h3 class="font-semibold text-lg mb-2">Tips</h3>
+        <ul class="list-disc pl-5 text-slate-600">
+            <li>Login as student → test student + public routes</li>
+            <li>Login as teacher → test teacher + student + public</li>
+            <li>Login as admin → test all</li>
+            <li>Use this page to check redirect loops or permission issues</li>
+        </ul>
+    </div>
+
+</div>
+{% endblock %}
