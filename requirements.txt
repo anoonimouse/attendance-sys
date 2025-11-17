@@ -5,3 +5,4 @@ Flask-SQLAlchemy>=3.0
 python-dotenv>=0.21.0
 qrcode>=7.3
 pillow>=10.0
+psycopg2-binary

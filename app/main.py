@@ -3,122 +3,181 @@ from flask_login import login_required, current_user
 from .models import Room, AttendanceSlot, AttendanceRecord, User
 from . import db
 from datetime import datetime
-import random, secrets
 import qrcode
 import io
-import base64
 
 main_bp = Blueprint("main", __name__)
 
+
+# ---------------------------------------------------------------------
+# PUBLIC ROUTE
+# ---------------------------------------------------------------------
 @main_bp.route("/")
 def index():
     return render_template("index.html")
 
+
+# ---------------------------------------------------------------------
+# STUDENT DASHBOARD
+# ---------------------------------------------------------------------
 @main_bp.route("/dashboard")
 @login_required
 def dashboard():
     now = datetime.utcnow()
+
     active = AttendanceSlot.query.filter(
-        AttendanceSlot.is_active==True,
+        AttendanceSlot.is_active == True,
         AttendanceSlot.start_time <= now,
         AttendanceSlot.end_time >= now
     ).order_by(AttendanceSlot.start_time.desc()).first()
-    # summary stats (simple)
+
+    # student stats
     total_sessions = AttendanceSlot.query.count()
     attended_count = AttendanceRecord.query.filter_by(student_id=current_user.id).count()
-    attendance_rate = 0
-    if total_sessions:
-        attendance_rate = round((attended_count / total_sessions) * 100, 1)
-    rooms = Room.query.all()
-    return render_template("student/dashboard.html",
-                           user=current_user,
-                           active=active,
-                           total_sessions=total_sessions,
-                           attended=attended_count,
-                           attendance_rate=attendance_rate,
-                           rooms=rooms)
 
+    attendance_rate = round((attended_count / total_sessions) * 100, 1) if total_sessions else 0
+
+    rooms = Room.query.all()
+
+    return render_template(
+        "student/dashboard.html",
+        user=current_user,
+        active=active,
+        total_sessions=total_sessions,
+        attended=attended_count,
+        attendance_rate=attendance_rate,
+        rooms=rooms
+    )
+
+
+# ---------------------------------------------------------------------
+# STUDENT: MARK ATTENDANCE
+# ---------------------------------------------------------------------
 @main_bp.route("/attendance/mark", methods=["POST"])
 @login_required
 def mark_attendance():
     """
     Expect JSON:
-    { fingerprint: <visitorId>, pin: <optional>, qr_token: <optional>, method: "pin"|"qr" }
+    {
+        fingerprint: <visitorId>,
+        pin: <optional>,
+        qr_token: <optional>,
+        method: "pin" | "qr"
+    }
     """
     data = request.get_json() or {}
     fingerprint = data.get("fingerprint")
     method = data.get("method", "pin")
     now = datetime.utcnow()
 
-    # find active slot
+    # active slot lookup
     slot = AttendanceSlot.query.filter(
-        AttendanceSlot.is_active==True,
+        AttendanceSlot.is_active == True,
         AttendanceSlot.start_time <= now,
         AttendanceSlot.end_time >= now
     ).order_by(AttendanceSlot.start_time.desc()).first()
 
     if not slot:
-        return jsonify({"ok":False, "msg":"No active session"}), 400
+        return jsonify({"ok": False, "msg": "No active session"}), 400
 
-    # If slot requires pin and method is pin:
+    # PIN Method
     if method == "pin" and slot.require_pin:
         pin = data.get("pin")
-        if not pin or slot.pin_code != pin:
-            return jsonify({"ok":False, "msg":"Invalid PIN"}), 403
+        if not pin or pin != slot.pin_code:
+            return jsonify({"ok": False, "msg": "Invalid PIN"}), 403
 
-    # If method is qr, verify token
+    # QR Method
     if method == "qr":
         token = data.get("qr_token")
-        if not token or slot.qr_token != token:
-            return jsonify({"ok":False, "msg":"Invalid QR token"}), 403
+        if not token or token != slot.qr_token:
+            return jsonify({"ok": False, "msg": "Invalid QR token"}), 403
 
-    # check duplicate
+    # Check duplicate
     exists = AttendanceRecord.query.filter_by(slot_id=slot.id, student_id=current_user.id).first()
     if exists:
-        return jsonify({"ok":False, "msg":"Already marked"}), 200
+        return jsonify({"ok": False, "msg": "Already marked"}), 200
 
-    # fingerprint verification: if user.device_fingerprint exists, ensure it matches
+    # Fingerprint check
     if current_user.device_fingerprint:
-        # small tolerance: if mismatch, require confirmation — here we reject outright
         if fingerprint and fingerprint != current_user.device_fingerprint:
-            return jsonify({"ok":False, "msg":"Device fingerprint mismatch"}), 403
+            return jsonify({"ok": False, "msg": "Device fingerprint mismatch"}), 403
     else:
-        # store their fingerprint on first successful mark
+        # First attendance: save device fingerprint
         if fingerprint:
             current_user.device_fingerprint = fingerprint
             db.session.add(current_user)
 
-    rec = AttendanceRecord(slot_id=slot.id, student_id=current_user.id, timestamp=now, fingerprint=fingerprint, method=method)
+    # Save attendance
+    rec = AttendanceRecord(
+        slot_id=slot.id,
+        student_id=current_user.id,
+        timestamp=now,
+        fingerprint=fingerprint,
+        method=method
+    )
     db.session.add(rec)
     db.session.commit()
-    return jsonify({"ok":True, "msg":"Attendance recorded", "timestamp": rec.timestamp.isoformat()})
 
+    return jsonify({"ok": True, "msg": "Attendance recorded", "timestamp": rec.timestamp.isoformat()})
+
+
+# ---------------------------------------------------------------------
+# STUDENT: ATTENDANCE HISTORY
+# ---------------------------------------------------------------------
 @main_bp.route("/attendance/history")
 @login_required
 def history():
-    records = AttendanceRecord.query.filter_by(student_id=current_user.id).order_by(AttendanceRecord.timestamp.desc()).all()
+    records = AttendanceRecord.query.filter_by(
+        student_id=current_user.id
+    ).order_by(AttendanceRecord.timestamp.desc()).all()
+
     return render_template("student/history.html", records=records)
 
+
+# ---------------------------------------------------------------------
+# TEACHER-ONLY: GENERATE QR PNG
+# ---------------------------------------------------------------------
 @main_bp.route("/slot/<int:slot_id>/qr.png")
 @login_required
 def slot_qr(slot_id):
-    """Return PNG of a QR for a slot (only for teachers but kept simple)"""
+    """
+    Return a PNG QR code for the given slot.
+    SECURITY: Only teachers/admin should access this.
+    """
+
+    # 🔐 TEACHER ONLY
+    if not current_user.is_teacher():
+        return "Unauthorized", 403
+
     slot = AttendanceSlot.query.get_or_404(slot_id)
-    # build URL containing token — students scanning should hit a simple mark URL or use mobile to open UI
-    url = url_for("main.qr_mark", slot_id=slot.id, token=slot.qr_token, _external=True)
-    img = qrcode.make(url)
+
+    # Build QR URL for student device
+    qr_url = url_for(
+        "main.qr_mark",
+        slot_id=slot.id,
+        token=slot.qr_token,
+        _external=True
+    )
+
+    img = qrcode.make(qr_url)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     buf.seek(0)
+
     return current_app.response_class(buf.getvalue(), mimetype="image/png")
 
+
+# ---------------------------------------------------------------------
+# STUDENT: QR MARKING PAGE
+# ---------------------------------------------------------------------
 @main_bp.route("/qr/mark")
 @login_required
 def qr_mark():
     """
-    A convenience page for when students scan QR and open in browser.
-    It shows a button that will call the JS marking endpoint with qr_token.
+    Page shown after a student scans the QR.
+    Student clicks "Mark Attendance" → Calls /attendance/mark using method="qr".
     """
     slot_id = request.args.get("slot_id")
     token = request.args.get("token")
+
     return render_template("student/qr_mark.html", slot_id=slot_id, token=token)
