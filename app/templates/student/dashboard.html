@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2 space-y-6">
+    <!-- header -->
+    <div class="card flex items-start justify-between">
+      <div>
+        <h2 class="text-2xl font-bold">Student Portal</h2>
+        <div class="text-sm text-slate-500 mt-1">{{ user.email }}</div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 rounded-full bg-[#1E293B] text-white flex items-center justify-center font-semibold">
+          {{ user.name.split(' ')[0][:1] }}{{ (user.name.split(' ')[1][:1] if user.name.split(' ')|length>1 else '') }}
+        </div>
+      </div>
+    </div>
+
+    <!-- active slot -->
+    <div class="card">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm font-semibold">Active Attendance Session <span class="ml-3 badge-active">Active</span></div>
+          {% if active %}
+            <div class="text-lg font-semibold mt-2 text-[var(--cyan)]">{{ active.room_id }} - Session</div>
+            <div class="mt-4 grid grid-cols-2 gap-3 text-sm text-slate-600">
+              <div>Instructor:</div><div>Dr. Sarah Johnson</div>
+              <div>Time Remaining:</div><div id="time-remaining">calculating...</div>
+              <div>Started:</div><div>{{ active.start_time }}</div>
+            </div>
+
+            <div class="mt-6">
+              <button id="markBtn" class="w-full py-3 rounded btn-primary flex items-center justify-center gap-2">
+                ✓ Mark My Attendance
+              </button>
+            </div>
+
+            <div id="confirm" class="hidden mt-4 text-center">
+              <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[var(--cyan)] text-white text-2xl">✓</div>
+              <h3 class="mt-3 text-lg font-semibold">Attendance Confirmed!</h3>
+              <div class="text-sm text-slate-500" id="confirmedAt"></div>
+            </div>
+          {% else %}
+            <div class="text-slate-500 mt-2">No active attendance session right now.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- history -->
+    <div class="card">
+      <h3 class="font-semibold">Attendance History</h3>
+      <p class="text-sm text-slate-500 mt-1">Your recent attendance records</p>
+      <div class="mt-4 space-y-2">
+        {% for r in [] %}
+        <!-- placeholder -->
+        {% endfor %}
+        <div class="text-sm text-slate-500">No records yet in demo.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- stats -->
+  <div class="space-y-4">
+    <div class="card">
+      <div class="grid grid-cols-3 gap-3 text-center">
+        <div>
+          <div class="rounded p-3 bg-slate-50 inline-block"><svg class="w-6 h-6 text-slate-400" /></div>
+          <div class="text-2xl font-bold mt-2">{{ total_sessions }}</div>
+          <div class="text-sm text-slate-500">Total Sessions</div>
+        </div>
+        <div>
+          <div class="rounded p-3 bg-slate-50 inline-block"><svg class="w-6 h-6 text-slate-400" /></div>
+          <div class="text-2xl font-bold mt-2">{{ attended }}</div>
+          <div class="text-sm text-slate-500">Attended</div>
+        </div>
+        <div>
+          <div class="rounded p-3 bg-slate-50 inline-block"><svg class="w-6 h-6 text-slate-400" /></div>
+          <div class="text-2xl font-bold mt-2">{{ attendance_rate }}%</div>
+          <div class="text-sm text-slate-500">Attendance Rate</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4 class="font-semibold">Rooms</h4>
+      <ul class="mt-3 text-sm text-slate-600">
+        {% for r in rooms %}
+          <li class="py-1">{{ r.name }}</li>
+        {% else %}
+          <li>No rooms yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script src="https://openfpcdn.io/fingerprintjs/v3"></script>
+<script>
+(async function(){
+  const fp = await FingerprintJS.load();
+  const result = await fp.get();
+  const fingerprint = result.visitorId;
+  const markBtn = document.getElementById('markBtn');
+  const activeSlot = {{ 'true' if active else 'false' }};
+  // compute time remaining
+  {% if active %}
+    const end = new Date("{{ active.end_time.isoformat() }}");
+    function updateTime(){
+      const now = new Date();
+      let diff = Math.max(0, (end - now)/1000);
+      const mm = Math.floor(diff/60);
+      const ss = Math.floor(diff%60).toString().padStart(2,'0');
+      document.getElementById('time-remaining').innerText = mm + ":" + ss + " minutes";
+      if(diff<=0) clearInterval(ti);
+    }
+    updateTime();
+    const ti = setInterval(updateTime,1000);
+
+    markBtn.addEventListener('click', async function(){
+      markBtn.disabled = true;
+      const payload = { fingerprint: fingerprint, method: "pin" };
+      // for convenience we prompt for PIN if required
+      // if slot requires pin, ask user input
+      {% if active.require_pin %}
+      const pin = prompt("Enter the 5-digit PIN shown by your instructor:");
+      if(!pin){ alert("PIN required"); markBtn.disabled=false; return; }
+      payload.pin = pin;
+      {% endif %}
+      const res = await fetch("{{ url_for('main.mark_attendance') }}", {
+        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if(data.ok){
+        document.getElementById('confirm').classList.remove('hidden');
+        document.getElementById('confirmedAt').innerText = "Marked at " + new Date(data.timestamp).toLocaleString();
+        showToast("Attendance marked successfully!");
+      } else {
+        alert(data.msg || "Failed to mark");
+        showToast(data.msg || "Failed to mark");
+      }
+      markBtn.disabled = false;
+    });
+  {% endif %}
+})();
+</script>
+{% endblock %}

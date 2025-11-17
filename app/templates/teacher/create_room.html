@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="bg-white rounded shadow p-6 max-w-xl">
+  <h2 class="text-lg font-semibold mb-3">Create Room</h2>
+  <form method="post">
+    <label class="block">Room name</label>
+    <input name="name" class="w-full border rounded px-3 py-2 mt-1" required>
+    <div class="mt-4">
+      <button class="px-4 py-2 bg-indigo-600 text-white rounded">Create</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

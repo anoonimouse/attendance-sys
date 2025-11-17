@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-[70vh] flex items-center justify-center">
+  <div class="w-full max-w-md">
+    <div class="card">
+      <h1 class="text-2xl font-bold text-slate-900">Sign In</h1>
+      <p class="text-sm text-slate-500 mt-1">Log in with your @iitj.ac.in Google account</p>
+
+      <div class="mt-6 space-y-4">
+        <a href="{{ url_for('auth.login') }}" class="block w-full text-left px-4 py-3 rounded btn-primary">
+          <div class="flex items-center gap-3">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" />
+            Continue as Student
+          </div>
+        </a>
+
+        <div class="flex items-center justify-center text-xs text-slate-400">
+          <div class="flex-1 h-px bg-slate-200"></div>
+          <div class="px-3">OR</div>
+          <div class="flex-1 h-px bg-slate-200"></div>
+        </div>
+
+        <a href="{{ url_for('auth.login') }}" class="block w-full text-left px-4 py-3 rounded border">
+          <div class="flex items-center gap-3">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" />
+            Continue as Teacher
+          </div>
+        </a>
+
+        <p class="text-xs text-[var(--cyan)] mt-3">Only @iitj.ac.in email addresses are allowed</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

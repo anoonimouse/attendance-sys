@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <div class="md:col-span-2 space-y-4">
+    <div class="bg-white rounded shadow p-6">
+      <h2 class="font-semibold text-lg">Active Slot</h2>
+      {% if active %}
+        <p class="mt-2">Room ID: {{ active.room_id }} | Start: {{ active.start_time }} | End: {{ active.end_time }}</p>
+        <form method="post" action="{{ url_for('main.mark_attendance') }}" class="mt-4">
+          <button class="px-4 py-2 bg-green-600 text-white rounded">Mark Attendance</button>
+        </form>
+      {% else %}
+        <p class="text-slate-500 mt-2">No active attendance slot right now.</p>
+      {% endif %}
+    </div>
+    <div class="bg-white rounded shadow p-6">
+      <h2 class="font-semibold text-lg">Your Attendance History</h2>
+      <a class="text-indigo-600 underline mt-2 inline-block" href="{{ url_for('main.history') }}">View history</a>
+    </div>
+  </div>
+  <div class="space-y-4">
+    <div class="bg-white rounded shadow p-6">
+      <h3 class="font-semibold">Quick Actions</h3>
+      {% if current_user.is_teacher() %}
+        <a href="{{ url_for('teacher.rooms') }}" class="block mt-3 px-3 py-2 border rounded">Manage Rooms / Slots</a>
+      {% endif %}
+      <a href="{{ url_for('auth.logout') }}" class="block mt-3 px-3 py-2 border rounded">Logout</a>
+    </div>
+    <div class="bg-white rounded shadow p-6">
+      <h3 class="font-semibold">Rooms</h3>
+      <ul class="mt-2 space-y-2">
+        {% for r in rooms %}
+          <li class="text-sm">{{ r.name }}</li>
+        {% else %}
+          <li class="text-slate-500 text-sm">No rooms yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

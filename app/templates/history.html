@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="bg-white rounded shadow p-6">
+  <h2 class="font-semibold text-lg">Attendance History</h2>
+  <table class="w-full mt-4 table-auto">
+    <thead><tr class="text-left"><th>Timestamp</th><th>Slot ID</th></tr></thead>
+    <tbody>
+    {% for r in records %}
+      <tr class="border-t"><td>{{ r.timestamp }}</td><td>{{ r.slot_id }}</td></tr>
+    {% else %}
+      <tr><td colspan="2" class="text-slate-500">No records.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

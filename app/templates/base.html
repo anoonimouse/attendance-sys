@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IITJ Attendance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{
+      --cyan:#14B8A6;
+      --navy:#1E293B;
+      --danger:#EF4444;
+    }
+    body { font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: #F8F9FA; color: #0F172A; }
+    .card { background: white; border-radius: 12px; box-shadow: 0 6px 16px rgba(15,23,40,0.06); padding: 20px; }
+    .btn-primary { background: var(--navy); color: white; }
+    .btn-cyan { background: var(--cyan); color: white; }
+    .badge-active { background: linear-gradient(90deg,var(--cyan),#06b6d4); color: white; padding:4px 8px; border-radius:999px; font-weight:600; }
+    /* toast placeholder */
+    #toast { position: fixed; right: 20px; bottom: 20px; z-index: 50; }
+  </style>
+</head>
+<body>
+  <nav class="bg-white shadow-sm">
+    <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="text-2xl font-bold">Attendance</div>
+        <div class="text-sm text-slate-500">Secure attendance management system</div>
+      </div>
+      <div>
+        {% if current_user.is_authenticated %}
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-[#1E293B] text-white rounded-full flex items-center justify-center font-semibold">
+              {{ current_user.name.split(' ')[0][:1] }}{{ (current_user.name.split(' ')[1][:1] if current_user.name.split(' ')|length>1 else '') }}
+            </div>
+            <div class="text-sm text-slate-600">{{ current_user.email }}</div>
+            <a href="{{ url_for('auth.logout') }}" class="ml-4 border px-3 py-1 rounded text-sm">Logout</a>
+          </div>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="px-4 py-2 btn-primary rounded">Sign in</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto mt-8 px-6">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="space-y-2 mb-4">
+          {% for category,msg in messages %}
+            <div class="card {{ 'border-l-4 border-green-400' if category=='success' else 'border-l-4 border-red-400' }}">
+              {{ msg }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <div id="toast"></div>
+
+  <script>
+    function showToast(msg, kind="info") {
+      const t = document.createElement("div");
+      t.className = "card mb-2";
+      t.innerText = msg;
+      document.getElementById("toast").appendChild(t);
+      setTimeout(()=> t.remove(), 5000);
+    }
+  </script>
+</body>
+</html>
