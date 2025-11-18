@@ -24,6 +24,8 @@ class User(db.Model, UserMixin):
 
     # --- relationships ---
     attendance_records = db.relationship("AttendanceRecord", backref="student", lazy=True)
+    created_rooms = db.relationship("Room", backref="creator", lazy=True)
+    opened_slots = db.relationship("AttendanceSlot", backref="opened_by_user", lazy=True)
 
     # --- helper functions ---
     def is_admin(self):

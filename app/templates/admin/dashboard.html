@@ -2,48 +2,155 @@
 {% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto py-10">
+<div class="max-w-7xl mx-auto">
 
-    <h1 class="text-3xl font-bold mb-6 text-slate-800">Admin Dashboard</h1>
-
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div class="bg-white p-5 rounded-xl shadow">
-            <p class="text-gray-500 text-sm">Total Users</p>
-            <p class="text-3xl font-bold">{{ total_users }}</p>
-        </div>
-        <div class="bg-white p-5 rounded-xl shadow">
-            <p class="text-gray-500 text-sm">Students</p>
-            <p class="text-3xl font-bold">{{ total_students }}</p>
-        </div>
-        <div class="bg-white p-5 rounded-xl shadow">
-            <p class="text-gray-500 text-sm">Teachers</p>
-            <p class="text-3xl font-bold">{{ total_teachers }}</p>
-        </div>
-        <div class="bg-white p-5 rounded-xl shadow">
-            <p class="text-gray-500 text-sm">Banned</p>
-            <p class="text-3xl font-bold text-red-600">{{ banned_count }}</p>
+    <!-- Header -->
+    <div class="card mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-900">Admin Dashboard</h1>
+                <p class="text-sm text-slate-500 mt-1">System overview and management</p>
+            </div>
+            <div class="flex gap-3">
+                <a href="{{ url_for('admin.users') }}"
+                   class="px-4 py-2 btn-primary rounded-lg hover:opacity-90 transition">
+                   👥 Manage Users
+                </a>
+                <a href="{{ url_for('admin.route_tester') }}"
+                   class="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition">
+                   🔧 Route Tester
+                </a>
+            </div>
         </div>
     </div>
 
-    <div class="bg-white p-6 rounded-xl shadow">
-        <h2 class="text-xl font-semibold mb-3">Latest Users</h2>
-
-        <ul class="divide-y">
-            {% for u in latest %}
-            <li class="py-3 flex justify-between">
-                <div>
-                    <p class="font-medium">{{ u.name or 'No Name' }}</p>
-                    <p class="text-gray-500 text-sm">{{ u.email }}</p>
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="card hover:shadow-xl transition">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-2xl">
+                    👥
                 </div>
-                <div class="text-gray-400 text-sm">{{ u.created_at.strftime('%Y-%m-%d') }}</div>
-            </li>
-            {% endfor %}
-        </ul>
+            </div>
+            <p class="text-sm text-slate-500">Total Users</p>
+            <p class="text-4xl font-bold text-slate-900 mt-2">{{ total_users }}</p>
+        </div>
 
-        <a href="{{ url_for('admin.users') }}"
-           class="mt-4 inline-block bg-cyan-600 text-white px-4 py-2 rounded-lg hover:bg-cyan-700">
-           Manage Users
+        <div class="card hover:shadow-xl transition">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-2xl">
+                    📚
+                </div>
+            </div>
+            <p class="text-sm text-slate-500">Students</p>
+            <p class="text-4xl font-bold text-green-600 mt-2">{{ total_students }}</p>
+        </div>
+
+        <div class="card hover:shadow-xl transition">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-2xl">
+                    🎓
+                </div>
+            </div>
+            <p class="text-sm text-slate-500">Teachers</p>
+            <p class="text-4xl font-bold text-blue-600 mt-2">{{ total_teachers }}</p>
+        </div>
+
+        <div class="card hover:shadow-xl transition">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-2xl">
+                    🚫
+                </div>
+            </div>
+            <p class="text-sm text-slate-500">Banned Users</p>
+            <p class="text-4xl font-bold text-red-600 mt-2">{{ banned_count }}</p>
+        </div>
+    </div>
+
+    <!-- Latest Users -->
+    <div class="card">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="text-xl font-semibold text-slate-900">Latest Users</h2>
+                <p class="text-sm text-slate-500 mt-1">Recently registered accounts</p>
+            </div>
+            <a href="{{ url_for('admin.users') }}"
+               class="text-sm text-[var(--cyan)] hover:underline">
+               View All →
+            </a>
+        </div>
+
+        {% if latest %}
+        <div class="space-y-3">
+            {% for u in latest %}
+            <div class="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--cyan)] to-[var(--navy)] text-white flex items-center justify-center font-semibold">
+                        {{ u.name.split(' ')[0][:1] if u.name else '?' }}{{ (u.name.split(' ')[1][:1] if u.name and u.name.split(' ')|length>1 else '') }}
+                    </div>
+                    <div>
+                        <p class="font-semibold text-slate-900">{{ u.name or 'No Name' }}</p>
+                        <p class="text-sm text-slate-500">{{ u.email }}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    {% if u.role == 'admin' %}
+                        <span class="px-2 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">Admin</span>
+                    {% elif u.role == 'teacher' %}
+                        <span class="px-2 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">Teacher</span>
+                    {% else %}
+                        <span class="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Student</span>
+                    {% endif %}
+                    <p class="text-xs text-slate-400 mt-1">{{ u.created_at.strftime('%b %d, %Y') }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-8 text-slate-500">
+            No users registered yet
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <a href="{{ url_for('admin.users') }}" class="card hover:shadow-xl transition cursor-pointer">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-[var(--cyan)] to-[var(--navy)] flex items-center justify-center text-white text-xl">
+                    👥
+                </div>
+                <div>
+                    <h3 class="font-semibold text-slate-900">Manage Users</h3>
+                    <p class="text-sm text-slate-500">Promote, demote, ban users</p>
+                </div>
+            </div>
+        </a>
+
+        <a href="{{ url_for('admin.route_tester') }}" class="card hover:shadow-xl transition cursor-pointer">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xl">
+                    🔧
+                </div>
+                <div>
+                    <h3 class="font-semibold text-slate-900">Route Tester</h3>
+                    <p class="text-sm text-slate-500">Debug routes and endpoints</p>
+                </div>
+            </div>
+        </a>
+
+        <a href="{{ url_for('main.dashboard') }}" class="card hover:shadow-xl transition cursor-pointer">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center text-white text-xl">
+                    📊
+                </div>
+                <div>
+                    <h3 class="font-semibold text-slate-900">Dashboard</h3>
+                    <p class="text-sm text-slate-500">View main dashboard</p>
+                </div>
+            </div>
         </a>
     </div>
+
 </div>
 {% endblock %}

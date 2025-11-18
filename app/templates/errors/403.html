@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-[70vh] flex items-center justify-center">
+  <div class="text-center">
+    <div class="text-9xl font-bold text-[var(--danger)] mb-4">403</div>
+    <h1 class="text-3xl font-bold text-slate-900 mb-2">Access Denied</h1>
+    <p class="text-slate-600 mb-6">You don't have permission to access this page.</p>
+    <div class="flex gap-3 justify-center">
+      <a href="{{ url_for('main.dashboard') }}" class="px-6 py-2 btn-primary rounded">
+        Go to Dashboard
+      </a>
+      <a href="/" class="px-6 py-2 border rounded hover:bg-slate-50">
+        Go Home
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

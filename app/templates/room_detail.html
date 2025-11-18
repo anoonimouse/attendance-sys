@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-5xl mx-auto">
+  <div class="mb-6">
+    <a href="{{ url_for('main.dashboard') }}" class="text-sm text-[var(--cyan)] hover:underline">
+      ← Back to Dashboard
+    </a>
+  </div>
+
+  <!-- Room Header -->
+  <div class="card mb-6">
+    <div class="flex items-start justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-slate-900">{{ room.name }}</h1>
+        <p class="text-sm text-slate-500 mt-2">
+          Created by {{ room.creator.name }} on {{ room.created_at.strftime('%B %d, %Y') }}
+        </p>
+      </div>
+      
+      {% if current_user.is_teacher() or current_user.is_admin() %}
+        {% if room.created_by == current_user.id %}
+        <a href="{{ url_for('teacher.open_slot') }}" 
+           class="px-4 py-2 btn-cyan rounded hover:opacity-90">
+          + Start Session
+        </a>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Sessions List -->
+  <div class="card">
+    <h2 class="text-xl font-semibold mb-4">Attendance Sessions</h2>
+    
+    {% if slots %}
+      <div class="space-y-3">
+        {% for slot in slots %}
+        <div class="p-4 border rounded-lg hover:bg-slate-50 transition">
+          <div class="flex items-center justify-between">
+            <div class="flex-1">
+              <div class="flex items-center gap-3">
+                <span class="font-semibold">
+                  {{ slot.start_time.strftime('%B %d, %Y') }}
+                </span>
+                
+                {% if slot.is_active %}
+                  <span class="badge-active">ACTIVE</span>
+                {% else %}
+                  <span class="px-2 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
+                    Closed
+                  </span>
+                {% endif %}
+              </div>
+              
+              <div class="mt-2 text-sm text-slate-600">
+                <span>{{ slot.start_time.strftime('%I:%M %p') }}</span>
+                <span class="mx-2">→</span>
+                <span>{{ slot.end_time.strftime('%I:%M %p') }}</span>
+                <span class="mx-2">•</span>
+                <span>Opened by {{ slot.opened_by_user.name }}</span>
+                
+                {% if slot.require_pin %}
+                  <span class="mx-2">•</span>
+                  <span class="font-mono">PIN: {{ slot.pin_code }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Attendance Count -->
+              {% set attendance_count = slot.attendance_records|length %}
+              <div class="mt-2 text-sm">
+                <span class="font-semibold text-[var(--cyan)]">{{ attendance_count }}</span>
+                <span class="text-slate-500">students attended</span>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-2">
+              {% if current_user.is_teacher() or current_user.is_admin() %}
+                {% if room.created_by == current_user.id %}
+                  <a href="{{ url_for('teacher.slot_live', slot_id=slot.id) }}"
+                     class="px-3 py-1 text-sm border rounded hover:bg-slate-100">
+                    👁️ View
+                  </a>
+                  <a href="{{ url_for('teacher.slot_export', slot_id=slot.id) }}"
+                     class="px-3 py-1 text-sm border rounded hover:bg-slate-100">
+                    📥 Export
+                  </a>
+                {% endif %}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center py-12 text-slate-500">
+        <div class="text-4xl mb-4">📋</div>
+        <p>No attendance sessions yet</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

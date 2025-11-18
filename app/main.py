@@ -217,3 +217,30 @@ def qr_mark():
     token = request.args.get("token")
 
     return render_template("student/qr_mark.html", slot_id=slot_id, token=token)
+
+
+# ---------------------------------------------------------------------
+# ACCOUNT PAGE
+# ---------------------------------------------------------------------
+@main_bp.route("/account")
+@login_required
+def account():
+    """User account/profile page"""
+    return render_template("account.html", user=current_user)
+
+
+# ---------------------------------------------------------------------
+# ROOM DETAIL PAGE
+# ---------------------------------------------------------------------
+@main_bp.route("/rooms/<int:room_id>")
+@login_required
+def room_detail(room_id):
+    """Display room details with sessions"""
+    room = Room.query.get_or_404(room_id)
+    
+    # Get all slots for this room
+    slots = AttendanceSlot.query.filter_by(room_id=room_id).order_by(
+        AttendanceSlot.start_time.desc()
+    ).all()
+    
+    return render_template("room_detail.html", room=room, slots=slots)

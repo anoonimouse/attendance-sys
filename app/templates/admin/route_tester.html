@@ -1,9 +1,20 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto">
-    <h1 class="text-2xl font-bold mb-2">Route Testing Dashboard</h1>
-    <p class="text-slate-600 mb-6">Click buttons to test navigation, redirects, permissions & auth behavior.</p>
+<div class="max-w-6xl mx-auto">
+    
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{{ url_for('admin.index') }}" class="text-sm text-[var(--cyan)] hover:underline">
+            ← Back to Admin Dashboard
+        </a>
+    </div>
+
+    <!-- Header -->
+    <div class="card mb-6">
+        <h1 class="text-3xl font-bold text-slate-900">Route Testing Dashboard</h1>
+        <p class="text-sm text-slate-500 mt-1">Test navigation, redirects, permissions & auth behavior</p>
+    </div>
 
     <!-- ROLE DISPLAY -->
     <div class="mb-6 card flex justify-between items-center">

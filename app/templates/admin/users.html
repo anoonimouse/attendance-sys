@@ -2,58 +2,143 @@
 {% block title %}Manage Users{% endblock %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto py-10">
+<div class="max-w-7xl mx-auto">
 
-<h1 class="text-3xl font-bold mb-6 text-slate-800">Manage Users</h1>
+<!-- Back Button -->
+<div class="mb-4">
+    <a href="{{ url_for('admin.index') }}" class="text-sm text-[var(--cyan)] hover:underline">
+        ← Back to Admin Dashboard
+    </a>
+</div>
 
-<form method="get" class="mb-6">
-    <input type="text" name="q" value="{{ q }}"
-           placeholder="Search email"
-           class="border border-slate-300 px-3 py-2 rounded-lg w-64">
-    <button class="bg-cyan-600 text-white px-4 py-2 rounded-lg ml-2">Search</button>
-</form>
+<!-- Header -->
+<div class="card mb-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900">Manage Users</h1>
+            <p class="text-sm text-slate-500 mt-1">Promote, demote, ban, or unban users</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-sm font-semibold">
+                {{ users|length }} users
+            </span>
+        </div>
+    </div>
+</div>
 
-<div class="bg-white rounded-xl shadow p-6">
-<table class="w-full text-left">
-    <thead>
-        <tr class="border-b text-gray-600">
-            <th class="py-2">Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Banned</th>
-            <th class="text-right">Actions</th>
-        </tr>
-    </thead>
+<!-- Search -->
+<div class="card mb-6">
+    <form method="get" class="flex gap-3">
+        <input 
+            type="text" 
+            name="q" 
+            value="{{ q }}"
+            placeholder="Search by email..."
+            class="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--cyan)] focus:border-transparent">
+        <button class="px-6 py-3 btn-primary rounded-lg hover:opacity-90 transition">
+            🔍 Search
+        </button>
+        {% if q %}
+        <a href="{{ url_for('admin.users') }}" 
+           class="px-6 py-3 border border-slate-300 rounded-lg hover:bg-slate-50 transition">
+            Clear
+        </a>
+        {% endif %}
+    </form>
+</div>
 
-    <tbody>
-    {% for u in users %}
-        <tr class="border-b">
-            <td class="py-3">{{ u.name or "—" }}</td>
-            <td>{{ u.email }}</td>
-            <td class="font-medium">{{ u.role }}</td>
-            <td>{% if u.is_banned %}<span class="text-red-600 font-semibold">Yes</span>{% else %}No{% endif %}</td>
-            <td class="py-3 text-right">
+<!-- Users Table -->
+<div class="card overflow-hidden">
+    {% if users %}
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-slate-50 border-b-2 border-slate-200">
+                <tr>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">User</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Role</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+            {% for u in users %}
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--cyan)] to-[var(--navy)] text-white flex items-center justify-center font-semibold text-sm">
+                                {{ u.name.split(' ')[0][:1] if u.name else '?' }}{{ (u.name.split(' ')[1][:1] if u.name and u.name.split(' ')|length>1 else '') }}
+                            </div>
+                            <div>
+                                <div class="font-semibold text-slate-900">{{ u.name or "—" }}</div>
+                                <div class="text-sm text-slate-500">{{ u.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if u.role == 'admin' %}
+                            <span class="px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">
+                                👑 Admin
+                            </span>
+                        {% elif u.role == 'teacher' %}
+                            <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
+                                🎓 Teacher
+                            </span>
+                        {% else %}
+                            <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
+                                📚 Student
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if u.is_banned %}
+                            <span class="px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold">
+                                🚫 Banned
+                            </span>
+                        {% else %}
+                            <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
+                                ✓ Active
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex gap-2 justify-end">
+                            {% if u.role == 'student' %}
+                            <button class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-semibold promote transition"
+                                    data-id="{{ u.id }}">
+                                ⬆️ Promote
+                            </button>
+                            {% elif u.role == 'teacher' %}
+                            <button class="px-3 py-1.5 bg-slate-600 text-white rounded-lg hover:bg-slate-700 text-xs font-semibold demote transition"
+                                    data-id="{{ u.id }}">
+                                ⬇️ Demote
+                            </button>
+                            {% endif %}
 
-                {% if u.role == 'student' %}
-                <button class="px-3 py-1 bg-slate-800 text-white rounded promote"
-                        data-id="{{ u.id }}">Promote</button>
-                {% elif u.role == 'teacher' %}
-                <button class="px-3 py-1 bg-slate-500 text-white rounded demote"
-                        data-id="{{ u.id }}">Demote</button>
-                {% endif %}
-
-                {% if u.is_banned %}
-                <button class="px-3 py-1 bg-green-600 text-white rounded unban"
-                        data-id="{{ u.id }}">Unban</button>
-                {% else %}
-                <button class="px-3 py-1 bg-red-600 text-white rounded ban"
-                        data-id="{{ u.id }}">Ban</button>
-                {% endif %}
-            </td>
-        </tr>
-    {% endfor %}
-    </tbody>
-</table>
+                            {% if u.is_banned %}
+                            <button class="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs font-semibold unban transition"
+                                    data-id="{{ u.id }}">
+                                ✓ Unban
+                            </button>
+                            {% else %}
+                            <button class="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-xs font-semibold ban transition"
+                                    data-id="{{ u.id }}">
+                                🚫 Ban
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-16">
+        <div class="text-4xl mb-4">🔍</div>
+        <h3 class="text-xl font-bold text-slate-900 mb-2">No Users Found</h3>
+        <p class="text-slate-600">Try adjusting your search criteria</p>
+    </div>
+    {% endif %}
 </div>
 
 </div>
@@ -73,14 +158,34 @@ document.addEventListener("click", async (e)=>{
                    : el.classList.contains("ban") ? "ban"
                    : "unban";
 
-        if(!confirm("Confirm " + type + "?")) return;
+        // Confirmation messages
+        const messages = {
+            promote: "Promote this student to teacher?",
+            demote: "Demote this teacher to student?",
+            ban: "Ban this user? They won't be able to log in.",
+            unban: "Unban this user? They will regain access."
+        };
 
-        let resp = await action(`/admin/user/${uid}/${type}`);
-        if(resp.ok){
-            alert(type + " done!");
-            location.reload();
-        } else {
-            alert(resp.msg || "Error");
+        if(!confirm(messages[type])) return;
+
+        // Disable button
+        el.disabled = true;
+        el.style.opacity = '0.5';
+
+        try {
+            let resp = await action(`/admin/user/${uid}/${type}`);
+            if(resp.ok){
+                showToast(`User ${type}d successfully!`, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(resp.msg || `Failed to ${type} user`, 'error');
+                el.disabled = false;
+                el.style.opacity = '1';
+            }
+        } catch (err) {
+            showToast(`Error: ${err.message}`, 'error');
+            el.disabled = false;
+            el.style.opacity = '1';
         }
     }
 });
