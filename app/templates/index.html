@@ -1,31 +1,31 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto text-center py-20">
-  <h1 class="text-5xl font-bold mb-6" style="color: var(--navy);">Welcome to Attendance System</h1>
-  <p class="text-xl text-slate-600 mb-8">Secure, modern, and efficient attendance tracking for educational institutions</p>
+<div class="max-w-4xl mx-auto text-center py-8 sm:py-12 md:py-20">
+  <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 px-4" style="color: var(--navy);">Welcome to Attendance System</h1>
+  <p class="text-base sm:text-lg md:text-xl text-slate-600 mb-6 sm:mb-8 px-4">Secure, modern, and efficient attendance tracking for educational institutions</p>
   
-  <div class="flex justify-center gap-4">
-    <a href="{{ url_for('auth.login') }}" class="btn btn-primary text-lg px-8 py-4">Get Started →</a>
+  <div class="flex justify-center px-4">
+    <a href="{{ url_for('auth.login') }}" class="btn btn-primary text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 w-full sm:w-auto">Get Started →</a>
   </div>
 
-  <div class="grid md:grid-cols-3 gap-6 mt-16">
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mt-8 sm:mt-12 md:mt-16">
     <div class="card text-left">
-      <div class="text-3xl mb-4">🎓</div>
-      <h3 class="text-xl font-bold mb-2">For Students</h3>
-      <p class="text-slate-600">Mark your attendance quickly using PIN or QR code scanning</p>
+      <div class="text-3xl sm:text-4xl mb-3 sm:mb-4">🎓</div>
+      <h3 class="text-lg sm:text-xl font-bold mb-2">For Students</h3>
+      <p class="text-sm sm:text-base text-slate-600">Mark your attendance quickly using PIN or QR code scanning</p>
     </div>
 
     <div class="card text-left">
-      <div class="text-3xl mb-4">👨‍🏫</div>
-      <h3 class="text-xl font-bold mb-2">For Teachers</h3>
-      <p class="text-slate-600">Create rooms, start sessions, and track attendance in real-time</p>
+      <div class="text-3xl sm:text-4xl mb-3 sm:mb-4">👨‍🏫</div>
+      <h3 class="text-lg sm:text-xl font-bold mb-2">For Teachers</h3>
+      <p class="text-sm sm:text-base text-slate-600">Create rooms, start sessions, and track attendance in real-time</p>
     </div>
 
-    <div class="card text-left">
-      <div class="text-3xl mb-4">⚙️</div>
-      <h3 class="text-xl font-bold mb-2">For Admins</h3>
-      <p class="text-slate-600">Manage users, assign roles, and monitor system activity</p>
+    <div class="card text-left sm:col-span-2 md:col-span-1">
+      <div class="text-3xl sm:text-4xl mb-3 sm:mb-4">⚙️</div>
+      <h3 class="text-lg sm:text-xl font-bold mb-2">For Admins</h3>
+      <p class="text-sm sm:text-base text-slate-600">Manage users, assign roles, and monitor system activity</p>
     </div>
   </div>
 </div>

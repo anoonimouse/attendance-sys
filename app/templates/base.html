@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
   <title>{% block title %}Attendance System{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -16,23 +16,36 @@
     body { 
       font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; 
       background: #F8F9FA; 
-      color: #0F172A; 
+      color: #0F172A;
+      font-size: 16px;
+    }
+    @media (min-width: 1024px) {
+      body { font-size: 18px; }
     }
     .card { 
       background: white; 
       border-radius: 12px; 
       box-shadow: 0 6px 16px rgba(15,23,40,0.06); 
-      padding: 24px; 
+      padding: 16px; 
       margin-bottom: 20px;
     }
+    @media (min-width: 768px) {
+      .card { padding: 24px; }
+    }
     .btn { 
-      padding: 10px 20px; 
+      padding: 12px 20px; 
       border-radius: 8px; 
       font-weight: 600; 
       cursor: pointer; 
       transition: all 0.2s;
       display: inline-block;
       text-decoration: none;
+      min-height: 44px;
+      min-width: 44px;
+      text-align: center;
+    }
+    @media (max-width: 639px) {
+      .btn-mobile-full { width: 100%; }
     }
     .btn-primary { 
       background: var(--navy); 
@@ -106,19 +119,55 @@
       background: linear-gradient(135deg, var(--navy) 0%, #334155 100%);
       color: white;
       border-radius: 12px;
-      padding: 20px;
+      padding: 16px;
       box-shadow: 0 4px 12px rgba(30,41,59,0.2);
+    }
+    @media (min-width: 768px) {
+      .stat-card { padding: 20px; }
+    }
+    
+    /* Mobile Navigation */
+    .mobile-menu {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 280px;
+      height: 100vh;
+      background: white;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+      transition: right 0.3s ease;
+      z-index: 50;
+      overflow-y: auto;
+    }
+    .mobile-menu.active {
+      right: 0;
+    }
+    .mobile-menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      background: rgba(0,0,0,0.5);
+      z-index: 45;
+      display: none;
+    }
+    .mobile-menu-overlay.active {
+      display: block;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .mobile-menu { transition: none; }
     }
   </style>
 </head>
 <body>
   <nav class="bg-white shadow-sm sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-6 py-4">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
       <div class="flex items-center justify-between">
         
         <!-- LEFT SIDE -->
-        <div class="flex items-center space-x-6">
-          <a href="{{ url_for('main.index') }}" class="text-2xl font-bold text-[var(--navy)]">📋 Attendance</a>
+        <div class="flex items-center space-x-3 sm:space-x-6">
+          <a href="{{ url_for('main.index') }}" class="text-xl sm:text-2xl font-bold text-[var(--navy)]">📋 Attendance</a>
           
           {% if current_user.is_authenticated %}
             <div class="hidden md:flex items-center space-x-4">
@@ -141,27 +190,34 @@
         </div>
 
         <!-- RIGHT SIDE -->
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 sm:gap-4">
           {% if current_user.is_authenticated %}
-            <!-- User Info -->
-            <div class="flex items-center gap-3">
+            <!-- User Info (Desktop Only) -->
+            <div class="hidden lg:flex items-center gap-3">
               <div class="w-10 h-10 bg-[var(--navy)] text-white rounded-full flex items-center justify-center font-semibold text-sm">
                 {{ current_user.name.split(' ')[0][:1] }}{{ (current_user.name.split(' ')[1][:1] if current_user.name.split(' ')|length>1 else '') }}
               </div>
-              <div class="hidden md:block">
+              <div>
                 <div class="text-sm font-semibold">{{ current_user.name }}</div>
                 <div class="text-xs text-slate-500">{{ current_user.email }}</div>
               </div>
             </div>
 
-            <!-- Account Link -->
-            <a href="{{ url_for('main.account') }}" class="btn btn-secondary text-sm">Account</a>
+            <!-- Account Link (Desktop Only) -->
+            <a href="{{ url_for('main.account') }}" class="hidden sm:inline-block btn btn-secondary text-sm">Account</a>
 
-            <!-- Logout -->
-            <a href="{{ url_for('auth.logout') }}" class="btn btn-danger text-sm">Logout</a>
+            <!-- Logout (Desktop Only) -->
+            <a href="{{ url_for('auth.logout') }}" class="hidden sm:inline-block btn btn-danger text-sm">Logout</a>
+
+            <!-- Hamburger Menu Button (Mobile Only) -->
+            <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg hover:bg-slate-100" aria-label="Open menu">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+              </svg>
+            </button>
 
           {% else %}
-            <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Sign in</a>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary text-sm sm:text-base">Sign in</a>
           {% endif %}
         </div>
 
@@ -169,10 +225,61 @@
     </div>
   </nav>
 
-  <main class="max-w-7xl mx-auto mt-8 px-6 pb-20">
+  <!-- Mobile Menu Overlay -->
+  <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="toggleMobileMenu()"></div>
+
+  <!-- Mobile Menu -->
+  {% if current_user.is_authenticated %}
+  <div class="mobile-menu" id="mobileMenu">
+    <div class="p-4 border-b border-slate-200">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-[var(--navy)]">Menu</h2>
+        <button onclick="toggleMobileMenu()" class="p-2 rounded-lg hover:bg-slate-100" aria-label="Close menu">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+        <div class="w-12 h-12 bg-[var(--navy)] text-white rounded-full flex items-center justify-center font-semibold">
+          {{ current_user.name.split(' ')[0][:1] }}{{ (current_user.name.split(' ')[1][:1] if current_user.name.split(' ')|length>1 else '') }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold truncate">{{ current_user.name }}</div>
+          <div class="text-xs text-slate-500 truncate">{{ current_user.email }}</div>
+        </div>
+      </div>
+    </div>
+    
+    <nav class="p-4">
+      <a href="{{ url_for('main.dashboard') }}" class="block py-3 px-4 rounded-lg hover:bg-slate-50 font-medium">📊 Dashboard</a>
+      
+      {% if current_user.role == 'student' %}
+        <a href="{{ url_for('main.history') }}" class="block py-3 px-4 rounded-lg hover:bg-slate-50 font-medium">📜 History</a>
+      {% endif %}
+      
+      {% if current_user.role == 'teacher' or current_user.role == 'admin' %}
+        <a href="{{ url_for('teacher.rooms') }}" class="block py-3 px-4 rounded-lg hover:bg-slate-50 font-medium">🏛️ Rooms</a>
+        <a href="{{ url_for('teacher.open_slot') }}" class="block py-3 px-4 rounded-lg hover:bg-slate-50 font-medium">🚀 Start Session</a>
+      {% endif %}
+      
+      {% if current_user.role == 'admin' %}
+        <a href="{{ url_for('admin.users') }}" class="block py-3 px-4 rounded-lg hover:bg-slate-50 font-medium">👥 Manage Users</a>
+      {% endif %}
+      
+      <a href="{{ url_for('main.account') }}" class="block py-3 px-4 rounded-lg hover:bg-slate-50 font-medium">👤 Account</a>
+    </nav>
+    
+    <div class="p-4 border-t border-slate-200">
+      <a href="{{ url_for('auth.logout') }}" class="block btn btn-danger w-full">Logout</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <main class="max-w-7xl mx-auto mt-4 sm:mt-6 md:mt-8 px-4 sm:px-6 pb-12 sm:pb-20">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        <div class="space-y-2 mb-6">
+        <div class="space-y-2 mb-4 sm:mb-6">
           {% for category,msg in messages %}
             <div class="card {{ 'border-l-4 border-[var(--cyan)]' if category=='success' else 'border-l-4 border-[var(--danger)]' }}">
               {{ msg }}
@@ -200,6 +307,18 @@
     // Confirmation for destructive actions
     function confirmAction(message) {
       return confirm(message);
+    }
+
+    // Mobile menu toggle
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobileMenu');
+      const overlay = document.getElementById('mobileMenuOverlay');
+      if (menu && overlay) {
+        menu.classList.toggle('active');
+        overlay.classList.toggle('active');
+        // Prevent body scroll when menu is open
+        document.body.style.overflow = menu.classList.contains('active') ? 'hidden' : '';
+      }
     }
   </script>
 

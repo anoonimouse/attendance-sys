@@ -3,55 +3,109 @@
 {% block title %}Manage Users{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-6">
+<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4 sm:mb-6">
   <div>
-    <h1 class="text-3xl font-bold" style="color: var(--navy);">Manage Users</h1>
-    <p class="text-slate-600">Promote, demote, ban, or unban users</p>
+    <h1 class="text-2xl sm:text-3xl font-bold" style="color: var(--navy);">Manage Users</h1>
+    <p class="text-sm sm:text-base text-slate-600">Promote, demote, ban, or unban users</p>
   </div>
-  <a href="{{ url_for('admin.index') }}" class="btn btn-secondary">← Back to Dashboard</a>
+  <a href="{{ url_for('admin.index') }}" class="btn btn-secondary w-full sm:w-auto">← Back to Dashboard</a>
 </div>
 
 <!-- Search -->
-<div class="card mb-6">
-  <form method="GET" action="{{ url_for('admin.users') }}" class="flex gap-3">
+<div class="card mb-4 sm:mb-6">
+  <form method="GET" action="{{ url_for('admin.users') }}" class="flex flex-col sm:flex-row gap-3">
     <input type="text" name="q" value="{{ q }}" 
            placeholder="Search by name or email..."
-           class="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:border-[var(--cyan)]">
-    <button type="submit" class="btn btn-primary">Search</button>
+           class="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:border-[var(--cyan)] text-base">
+    <button type="submit" class="btn btn-primary w-full sm:w-auto">Search</button>
   </form>
 </div>
 
 <!-- Users List -->
 <div class="card">
   {% if users %}
-    <div class="overflow-x-auto">
+    <!-- Mobile Card View (visible on small screens) -->
+    <div class="block md:hidden space-y-3">
+      {% for user in users %}
+        <div class="p-4 bg-slate-50 rounded-lg" id="user-{{ user.id }}">
+          <div class="mb-3">
+            <div class="font-semibold text-base">{{ user.name }}</div>
+            <div class="text-sm text-slate-600 break-all">{{ user.email }}</div>
+          </div>
+          
+          <div class="flex flex-wrap gap-2 mb-3">
+            <span class="badge badge-{{ user.role }}" id="role-badge-{{ user.id }}">
+              {{ user.role.title() }}
+            </span>
+            {% if user.is_banned %}
+              <span class="badge badge-banned" id="status-badge-{{ user.id }}">Banned</span>
+            {% else %}
+              <span class="badge" style="background: #d1fae5; color: #065f46;" id="status-badge-{{ user.id }}">Active</span>
+            {% endif %}
+          </div>
+          
+          <div class="text-xs text-slate-500 mb-3">
+            Joined: {{ user.created_at.strftime('%b %d, %Y') if user.created_at else 'N/A' }}
+          </div>
+          
+          <div class="flex flex-col gap-2">
+            {% if user.role == 'student' %}
+              <button onclick="promoteUser({{ user.id }})" 
+                      class="btn btn-secondary btn-sm w-full" id="promote-{{ user.id }}">
+                ⬆️ Promote to Teacher
+              </button>
+            {% elif user.role == 'teacher' %}
+              <button onclick="demoteUser({{ user.id }})" 
+                      class="btn btn-secondary btn-sm w-full" id="demote-{{ user.id }}">
+                ⬇️ Demote to Student
+              </button>
+            {% endif %}
+            
+            {% if not user.is_banned %}
+              <button onclick="banUser({{ user.id }})" 
+                      class="btn btn-danger btn-sm w-full" id="ban-{{ user.id }}">
+                🚫 Ban User
+              </button>
+            {% else %}
+              <button onclick="unbanUser({{ user.id }})" 
+                      class="btn btn-cyan btn-sm w-full" id="unban-{{ user.id }}">
+                ✅ Unban User
+              </button>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Desktop Table View (visible on medium+ screens) -->
+    <div class="hidden md:block overflow-x-auto">
       <table class="w-full">
         <thead>
           <tr class="border-b-2 border-slate-200">
-            <th class="text-left py-3 px-4 font-semibold">User</th>
-            <th class="text-left py-3 px-4 font-semibold">Role</th>
-            <th class="text-left py-3 px-4 font-semibold">Status</th>
-            <th class="text-left py-3 px-4 font-semibold">Joined</th>
-            <th class="text-right py-3 px-4 font-semibold">Actions</th>
+            <th class="text-left py-3 px-4 font-semibold text-sm">User</th>
+            <th class="text-left py-3 px-4 font-semibold text-sm">Role</th>
+            <th class="text-left py-3 px-4 font-semibold text-sm">Status</th>
+            <th class="text-left py-3 px-4 font-semibold text-sm">Joined</th>
+            <th class="text-right py-3 px-4 font-semibold text-sm">Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for user in users %}
-            <tr class="border-b border-slate-100 hover:bg-slate-50" id="user-{{ user.id }}">
+            <tr class="border-b border-slate-100 hover:bg-slate-50">
               <td class="py-3 px-4">
                 <div class="font-semibold">{{ user.name }}</div>
                 <div class="text-sm text-slate-600">{{ user.email }}</div>
               </td>
               <td class="py-3 px-4">
-                <span class="badge badge-{{ user.role }}" id="role-badge-{{ user.id }}">
+                <span class="badge badge-{{ user.role }}">
                   {{ user.role.title() }}
                 </span>
               </td>
               <td class="py-3 px-4">
                 {% if user.is_banned %}
-                  <span class="badge badge-banned" id="status-badge-{{ user.id }}">Banned</span>
+                  <span class="badge badge-banned">Banned</span>
                 {% else %}
-                  <span class="badge" style="background: #d1fae5; color: #065f46;" id="status-badge-{{ user.id }}">Active</span>
+                  <span class="badge" style="background: #d1fae5; color: #065f46;">Active</span>
                 {% endif %}
               </td>
               <td class="py-3 px-4 text-sm text-slate-600">
@@ -61,24 +115,24 @@
                 <div class="flex justify-end gap-2">
                   {% if user.role == 'student' %}
                     <button onclick="promoteUser({{ user.id }})" 
-                            class="btn btn-secondary btn-sm" id="promote-{{ user.id }}">
+                            class="btn btn-secondary btn-sm">
                       ⬆️ Promote
                     </button>
                   {% elif user.role == 'teacher' %}
                     <button onclick="demoteUser({{ user.id }})" 
-                            class="btn btn-secondary btn-sm" id="demote-{{ user.id }}">
+                            class="btn btn-secondary btn-sm">
                       ⬇️ Demote
                     </button>
                   {% endif %}
                   
                   {% if not user.is_banned %}
                     <button onclick="banUser({{ user.id }})" 
-                            class="btn btn-danger btn-sm" id="ban-{{ user.id }}">
+                            class="btn btn-danger btn-sm">
                       🚫 Ban
                     </button>
                   {% else %}
                     <button onclick="unbanUser({{ user.id }})" 
-                            class="btn btn-cyan btn-sm" id="unban-{{ user.id }}">
+                            class="btn btn-cyan btn-sm">
                       ✅ Unban
                     </button>
                   {% endif %}
@@ -91,7 +145,7 @@
     </div>
   {% else %}
     <div class="text-center py-12">
-      <p class="text-xl text-slate-600">No users found</p>
+      <p class="text-base sm:text-xl text-slate-600">No users found</p>
     </div>
   {% endif %}
 </div>
