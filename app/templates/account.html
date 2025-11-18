@@ -4,50 +4,50 @@
 
 {% block content %}
 <div class="max-w-3xl mx-auto">
-  <h1 class="text-3xl font-bold mb-6" style="color: var(--navy);">My Account</h1>
+  <h1 class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6" style="color: var(--navy);">My Account</h1>
   
   <div class="card">
-    <div class="flex items-center gap-6 mb-6">
-      <div class="w-20 h-20 bg-[var(--navy)] text-white rounded-full flex items-center justify-center font-bold text-2xl">
+    <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 mb-6">
+      <div class="w-16 h-16 sm:w-20 sm:h-20 bg-[var(--navy)] text-white rounded-full flex items-center justify-center font-bold text-xl sm:text-2xl flex-shrink-0">
         {{ user.name.split(' ')[0][:1] }}{{ (user.name.split(' ')[1][:1] if user.name.split(' ')|length>1 else '') }}
       </div>
-      <div>
-        <h2 class="text-2xl font-bold">{{ user.name }}</h2>
-        <p class="text-slate-600">{{ user.email }}</p>
-        <span class="badge badge-{{ user.role }} mt-2">{{ user.role.title() }}</span>
+      <div class="text-center sm:text-left">
+        <h2 class="text-xl sm:text-2xl font-bold">{{ user.name }}</h2>
+        <p class="text-sm sm:text-base text-slate-600 break-all">{{ user.email }}</p>
+        <span class="badge badge-{{ user.role }} mt-2 inline-block">{{ user.role.title() }}</span>
       </div>
     </div>
 
     <hr class="my-6">
 
-    <div class="grid md:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
-        <label class="text-sm font-semibold text-slate-600">Role</label>
-        <p class="text-lg">{{ user.role.title() }}</p>
+        <label class="text-xs sm:text-sm font-semibold text-slate-600">Role</label>
+        <p class="text-base sm:text-lg">{{ user.role.title() }}</p>
       </div>
 
       <div>
-        <label class="text-sm font-semibold text-slate-600">Account Status</label>
-        <p class="text-lg">{{ "Banned" if user.is_banned else "Active" }}</p>
+        <label class="text-xs sm:text-sm font-semibold text-slate-600">Account Status</label>
+        <p class="text-base sm:text-lg">{{ "Banned" if user.is_banned else "Active" }}</p>
       </div>
 
       <div>
-        <label class="text-sm font-semibold text-slate-600">Member Since</label>
-        <p class="text-lg">{{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'N/A' }}</p>
+        <label class="text-xs sm:text-sm font-semibold text-slate-600">Member Since</label>
+        <p class="text-base sm:text-lg">{{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'N/A' }}</p>
       </div>
 
       <div>
-        <label class="text-sm font-semibold text-slate-600">Last Login</label>
-        <p class="text-lg">{{ user.last_login.strftime('%B %d, %Y at %I:%M %p') if user.last_login else 'N/A' }}</p>
+        <label class="text-xs sm:text-sm font-semibold text-slate-600">Last Login</label>
+        <p class="text-base sm:text-lg">{{ user.last_login.strftime('%B %d, %Y at %I:%M %p') if user.last_login else 'N/A' }}</p>
       </div>
     </div>
 
     <hr class="my-6">
 
-    <div class="flex gap-3">
-      <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+    <div class="flex flex-col sm:flex-row gap-3">
+      <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary w-full sm:w-auto">Back to Dashboard</a>
       {% if user.role == 'student' %}
-        <a href="{{ url_for('main.history') }}" class="btn btn-secondary">View History</a>
+        <a href="{{ url_for('main.history') }}" class="btn btn-secondary w-full sm:w-auto">View History</a>
       {% endif %}
     </div>
   </div>
