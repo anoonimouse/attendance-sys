@@ -24,6 +24,7 @@ class User(db.Model, UserMixin):
 
     # --- relationships ---
     attendance_records = db.relationship("AttendanceRecord", backref="student", lazy=True)
+    opened_slots = db.relationship("AttendanceSlot", backref="opened_by_user", foreign_keys="AttendanceSlot.opened_by", lazy=True)
 
     # --- helper functions ---
     def is_admin(self):
@@ -67,6 +68,7 @@ class Room(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     slots = db.relationship("AttendanceSlot", backref="room", lazy=True)
+    creator = db.relationship("User", foreign_keys=[created_by], backref="created_rooms")
 
     def __repr__(self):
         return f"<Room {self.name}>"

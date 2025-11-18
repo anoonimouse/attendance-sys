@@ -83,6 +83,19 @@ def create_app():
     print("="*60 + "\n")
 
     # -------------------------
+    # Custom Error Handlers
+    # -------------------------
+    @app.errorhandler(403)
+    def forbidden(e):
+        from flask import render_template
+        return render_template("errors/403.html"), 403
+
+    @app.errorhandler(404)
+    def not_found(e):
+        from flask import render_template
+        return render_template("errors/404.html"), 404
+
+    # -------------------------
     # Create DB Tables
     # -------------------------
     with app.app_context():

@@ -1,11 +1,12 @@
 # app/auth.py
 
-from flask import Blueprint, redirect, url_for, session, request, flash, current_app
+from flask import Blueprint, redirect, url_for, session, request, flash, current_app, render_template
 from flask_login import login_user, logout_user, current_user
 from authlib.integrations.flask_client import OAuth
 from .models import User
 from . import db
 import requests
+from datetime import datetime
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -34,12 +35,21 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for("main.dashboard"))
     
+    return render_template("login.html")
+
+
+@auth_bp.route("/login/google")
+def login_google():
+    """Initiate Google OAuth flow"""
+    if current_user.is_authenticated:
+        return redirect(url_for("main.dashboard"))
+    
     try:
         redirect_uri = url_for("auth.callback", _external=True)
         return oauth.google.authorize_redirect(redirect_uri)
     except Exception as e:
-        flash(f"OAuth initialization failed: {e}", "danger")
-        return redirect("/")
+        flash(f"Login failed, please try again. Error: {e}", "danger")
+        return redirect(url_for("auth.login"))
 
 
 # -----------------------
@@ -61,7 +71,7 @@ def callback():
         userinfo_url = metadata.get("userinfo_endpoint")
 
         if not userinfo_url:
-            flash("Google login failed: userinfo endpoint missing.", "danger")
+            flash("Login failed, please try again.", "danger")
             return redirect(url_for("auth.login"))
 
         # 4️⃣ Request user info
@@ -71,7 +81,7 @@ def callback():
         )
 
         if resp.status_code != 200:
-            flash("Failed to fetch Google profile info.", "danger")
+            flash("Login failed, please try again.", "danger")
             return redirect(url_for("auth.login"))
 
         userinfo = resp.json()
@@ -81,7 +91,7 @@ def callback():
         hd = userinfo.get("hd")  # domain
 
         if not email:
-            flash("Google login didn't return an email.", "danger")
+            flash("Login failed, please try again.", "danger")
             return redirect(url_for("auth.login"))
 
         # 5️⃣ Domain check
@@ -106,6 +116,10 @@ def callback():
             flash("Your account has been banned. Contact administrator.", "danger")
             return redirect("/")
 
+        # Update last login
+        user.last_login = datetime.utcnow()
+        db.session.commit()
+
         login_user(user)
         flash("Logged in successfully.", "success")
         
@@ -118,7 +132,7 @@ def callback():
             return redirect(url_for("main.dashboard"))
 
     except Exception as e:
-        flash(f"Login failed: {e}", "danger")
+        flash(f"Login failed, please try again.", "danger")
         return redirect(url_for("auth.login"))
 
 

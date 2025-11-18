@@ -28,7 +28,7 @@ def dashboard():
     total_rooms = Room.query.filter_by(created_by=current_user.id).count()
     
     # Get all students
-    total_students = User.query.filter_by(role="student").count()
+    total_students = User.query.filter_by(role="student", is_banned=False).count()
     
     # Calculate average attendance across all sessions
     all_slots = AttendanceSlot.query.join(Room).filter(Room.created_by == current_user.id).all()
@@ -79,7 +79,7 @@ def create_room():
     if request.method == "POST":
         name = request.form.get("name")
         if not name:
-            flash("Room name required", "error")
+            flash("Room name required", "danger")
             return redirect(url_for("teacher.create_room"))
         r = Room(name=name, created_by=current_user.id)
         db.session.add(r)
@@ -151,7 +151,7 @@ def close_slot(slot_id):
 # ---------------------------------------------------------------------
 # LIVE ATTENDANCE FEED
 # ---------------------------------------------------------------------
-@teacher_bp.route("/slot/<int:slot_id>/live")
+@teacher_bp.route("/slots/<int:slot_id>")
 def slot_live(slot_id):
     """Live attendance monitoring page"""
     slot = AttendanceSlot.query.get_or_404(slot_id)
@@ -165,7 +165,7 @@ def slot_live(slot_id):
     return render_template("teacher/slot_live.html", slot=slot, room=room)
 
 
-@teacher_bp.route("/slot/<int:slot_id>/feed")
+@teacher_bp.route("/slots/<int:slot_id>/feed")
 def slot_feed(slot_id):
     """JSON feed for live attendance updates"""
     slot = AttendanceSlot.query.get_or_404(slot_id)
@@ -202,7 +202,7 @@ def slot_feed(slot_id):
 # ---------------------------------------------------------------------
 # EXPORT ATTENDANCE
 # ---------------------------------------------------------------------
-@teacher_bp.route("/slot/<int:slot_id>/export")
+@teacher_bp.route("/slots/<int:slot_id>/export")
 def slot_export(slot_id):
     """Export attendance to CSV"""
     slot = AttendanceSlot.query.get_or_404(slot_id)

@@ -1,49 +1,72 @@
 {% extends "base.html" %}
+
 {% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto py-10">
+<div class="mb-6">
+  <h1 class="text-3xl font-bold" style="color: var(--navy);">Admin Dashboard</h1>
+  <p class="text-slate-600">System administration & user management</p>
+</div>
 
-    <h1 class="text-3xl font-bold mb-6 text-slate-800">Admin Dashboard</h1>
+<!-- Stats -->
+<div class="grid md:grid-cols-4 gap-6 mb-8">
+  <div class="stat-card">
+    <div class="text-sm opacity-80 mb-1">Total Users</div>
+    <div class="text-4xl font-bold">{{ total_users }}</div>
+  </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div class="bg-white p-5 rounded-xl shadow">
-            <p class="text-gray-500 text-sm">Total Users</p>
-            <p class="text-3xl font-bold">{{ total_users }}</p>
+  <div class="stat-card">
+    <div class="text-sm opacity-80 mb-1">Students</div>
+    <div class="text-4xl font-bold">{{ total_students }}</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="text-sm opacity-80 mb-1">Teachers</div>
+    <div class="text-4xl font-bold">{{ total_teachers }}</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="text-sm opacity-80 mb-1">Banned</div>
+    <div class="text-4xl font-bold">{{ banned_count }}</div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mb-6">
+  <h2 class="text-xl font-bold mb-4">Quick Actions</h2>
+  <div class="flex flex-wrap gap-3">
+    <a href="{{ url_for('admin.users') }}" class="btn btn-cyan">👥 Manage Users</a>
+    <a href="{{ url_for('teacher.dashboard') }}" class="btn btn-primary">👨‍🏫 Teacher View</a>
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">👁️ Student View</a>
+    {% if current_user.email in config.ADMINS %}
+      <a href="{{ url_for('admin.route_tester') }}" class="btn btn-secondary">🔧 Route Tester</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Latest Users -->
+<div class="card">
+  <h2 class="text-xl font-bold mb-4">Latest Users</h2>
+  {% if latest %}
+    <div class="space-y-3">
+      {% for user in latest %}
+        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+          <div>
+            <div class="font-semibold">{{ user.name }}</div>
+            <div class="text-sm text-slate-600">{{ user.email }}</div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="badge badge-{{ user.role }}">{{ user.role.title() }}</span>
+            {% if user.is_banned %}
+              <span class="badge badge-banned">Banned</span>
+            {% endif %}
+            <a href="{{ url_for('admin.users') }}?q={{ user.email }}" class="btn btn-secondary btn-sm">Manage</a>
+          </div>
         </div>
-        <div class="bg-white p-5 rounded-xl shadow">
-            <p class="text-gray-500 text-sm">Students</p>
-            <p class="text-3xl font-bold">{{ total_students }}</p>
-        </div>
-        <div class="bg-white p-5 rounded-xl shadow">
-            <p class="text-gray-500 text-sm">Teachers</p>
-            <p class="text-3xl font-bold">{{ total_teachers }}</p>
-        </div>
-        <div class="bg-white p-5 rounded-xl shadow">
-            <p class="text-gray-500 text-sm">Banned</p>
-            <p class="text-3xl font-bold text-red-600">{{ banned_count }}</p>
-        </div>
+      {% endfor %}
     </div>
-
-    <div class="bg-white p-6 rounded-xl shadow">
-        <h2 class="text-xl font-semibold mb-3">Latest Users</h2>
-
-        <ul class="divide-y">
-            {% for u in latest %}
-            <li class="py-3 flex justify-between">
-                <div>
-                    <p class="font-medium">{{ u.name or 'No Name' }}</p>
-                    <p class="text-gray-500 text-sm">{{ u.email }}</p>
-                </div>
-                <div class="text-gray-400 text-sm">{{ u.created_at.strftime('%Y-%m-%d') }}</div>
-            </li>
-            {% endfor %}
-        </ul>
-
-        <a href="{{ url_for('admin.users') }}"
-           class="mt-4 inline-block bg-cyan-600 text-white px-4 py-2 rounded-lg hover:bg-cyan-700">
-           Manage Users
-        </a>
-    </div>
+  {% else %}
+    <p class="text-slate-600">No users yet</p>
+  {% endif %}
 </div>
 {% endblock %}

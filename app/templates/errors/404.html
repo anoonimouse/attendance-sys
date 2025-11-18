@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto text-center py-20">
+  <div class="text-8xl mb-6">🔍</div>
+  <h1 class="text-4xl font-bold mb-4" style="color: var(--navy);">Page Not Found</h1>
+  <p class="text-xl text-slate-600 mb-8">The page you're looking for doesn't exist.</p>
+  
+  <div class="flex justify-center gap-4">
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">Go to Dashboard</a>
+    <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Go Home</a>
+  </div>
+</div>
+{% endblock %}

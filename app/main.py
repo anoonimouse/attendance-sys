@@ -16,45 +16,23 @@ main_bp = Blueprint("main", __name__)
 def index():
     """Landing page - redirect if logged in"""
     if current_user.is_authenticated:
-        return redirect(url_for("main.route_user"))
+        return redirect(url_for("main.dashboard"))
     return render_template("index.html")
 
 
-@main_bp.route("/route")
+# ---------------------------------------------------------------------
+# UNIVERSAL DASHBOARD ROUTER
+# ---------------------------------------------------------------------
+@main_bp.route("/dashboard")
 @login_required
-def route_user():
+def dashboard():
     """Route user to correct dashboard based on role"""
     if current_user.role == "teacher":
         return redirect(url_for("teacher.dashboard"))
     elif current_user.role == "admin":
         return redirect(url_for("admin.index"))
-    else:
-        return redirect(url_for("main.student_dashboard"))
-
-
-@main_bp.route("/student/dashboard")
-@login_required
-def student_dashboard():
-    """Student-only dashboard"""
-    # Redirect teachers and admins to their dashboards
-    if current_user.role == "teacher":
-        return redirect(url_for("teacher.dashboard"))
-    elif current_user.role == "admin":
-        return redirect(url_for("admin.index"))
-
-
-# ---------------------------------------------------------------------
-# STUDENT DASHBOARD
-# ---------------------------------------------------------------------
-@main_bp.route("/dashboard")
-@login_required
-def dashboard():
-    """Student dashboard - redirect teachers/admins to their own dashboards"""
-    if current_user.role == "teacher":
-        return redirect(url_for("teacher.dashboard"))
-    elif current_user.role == "admin":
-        return redirect(url_for("admin.index"))
     
+    # Student Dashboard
     now = datetime.utcnow()
 
     active = AttendanceSlot.query.filter(
@@ -80,6 +58,31 @@ def dashboard():
         attendance_rate=attendance_rate,
         rooms=rooms
     )
+
+
+# ---------------------------------------------------------------------
+# ACCOUNT PAGE
+# ---------------------------------------------------------------------
+@main_bp.route("/account")
+@login_required
+def account():
+    """Simple profile page"""
+    return render_template("account.html", user=current_user)
+
+
+# ---------------------------------------------------------------------
+# ROOM DETAIL PAGE
+# ---------------------------------------------------------------------
+@main_bp.route("/rooms/<int:room_id>")
+@login_required
+def room_detail(room_id):
+    """Show room details and past sessions"""
+    room = Room.query.get_or_404(room_id)
+    sessions = AttendanceSlot.query.filter_by(room_id=room_id).order_by(
+        AttendanceSlot.start_time.desc()
+    ).limit(20).all()
+    
+    return render_template("room_detail.html", room=room, sessions=sessions)
 
 
 # ---------------------------------------------------------------------

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}{{ room.name }} - Room Details{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-3xl font-bold" style="color: var(--navy);">{{ room.name }}</h1>
+      <p class="text-slate-600">Room ID: {{ room.id }}</p>
+    </div>
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">← Back to Dashboard</a>
+  </div>
+
+  <div class="card mb-6">
+    <h2 class="text-xl font-bold mb-4">Room Information</h2>
+    <div class="grid md:grid-cols-2 gap-4">
+      <div>
+        <label class="text-sm font-semibold text-slate-600">Created By</label>
+        <p class="text-lg">{{ room.creator.name if room.creator else 'Unknown' }}</p>
+      </div>
+      <div>
+        <label class="text-sm font-semibold text-slate-600">Created At</label>
+        <p class="text-lg">{{ room.created_at.strftime('%B %d, %Y') if room.created_at else 'N/A' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="text-xl font-bold mb-4">Recent Sessions</h2>
+    {% if sessions %}
+      <div class="space-y-3">
+        {% for session in sessions %}
+          <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+            <div>
+              <div class="font-semibold">Session #{{ session.id }}</div>
+              <div class="text-sm text-slate-600">
+                Started: {{ session.start_time.strftime('%b %d, %Y at %I:%M %p') }}
+              </div>
+              <div class="text-sm text-slate-600">
+                Ended: {{ session.end_time.strftime('%b %d, %Y at %I:%M %p') if session.end_time else 'N/A' }}
+              </div>
+            </div>
+            <div>
+              {% if session.is_active %}
+                <span class="badge-active">Active</span>
+              {% else %}
+                <span class="badge" style="background: #e2e8f0; color: #475569;">Closed</span>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-slate-600">No sessions have been conducted in this room yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,32 +1,63 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+
+{% block title %}Mark Attendance - QR{% endblock %}
+
 {% block content %}
-<div class="min-h-[60vh] flex items-center justify-center">
-  <div class="card max-w-md text-center">
-    <h3 class="font-semibold">Scan QR — Quick Mark</h3>
-    <p class="text-sm text-slate-500 mt-1">Tap Mark to confirm using QR token</p>
-    <div class="mt-4">
-      <button id="qrMarkBtn" class="px-4 py-2 btn-primary rounded">Mark via QR</button>
-    </div>
-    <div id="qres" class="mt-3 text-sm"></div>
+<div class="max-w-2xl mx-auto text-center">
+  <div class="card">
+    <h1 class="text-3xl font-bold mb-4" style="color: var(--navy);">QR Code Scanned ✓</h1>
+    <p class="text-lg text-slate-600 mb-8">Click the button below to mark your attendance</p>
+    
+    <button onclick="markAttendance()" class="btn btn-cyan text-xl px-12 py-5">
+      Mark My Attendance
+    </button>
+
+    <p class="text-sm text-slate-500 mt-6">Session ID: {{ slot_id }}</p>
   </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
 <script>
-document.getElementById('qrMarkBtn').addEventListener('click', async function(){
-  const token = "{{ token }}";
-  const fingerprint = (await FingerprintJS.load()).get().then(x=>x.visitorId).catch(()=>null);
-  const payload = { method: "qr", qr_token: token, fingerprint: await fingerprint };
-  const res = await fetch("{{ url_for('main.mark_attendance') }}", {
-    method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)
+let visitorId = null;
+
+FingerprintJS.load().then(fp => {
+  fp.get().then(result => {
+    visitorId = result.visitorId;
   });
-  const data = await res.json();
-  if(data.ok) {
-    document.getElementById('qres').innerText = "Marked at " + new Date(data.timestamp).toLocaleString();
-    showToast("Attendance marked via QR");
-  } else {
-    document.getElementById('qres').innerText = data.msg || "Failed";
-    showToast(data.msg || "Failed to mark");
-  }
 });
+
+async function markAttendance() {
+  if (!visitorId) {
+    showToast("Please wait, initializing...", "info");
+    return;
+  }
+
+  try {
+    const res = await fetch("/attendance/mark", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fingerprint: visitorId,
+        method: "qr",
+        qr_token: "{{ token }}"
+      })
+    });
+
+    const data = await res.json();
+    
+    if (data.ok) {
+      showToast(data.msg, "success");
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 1500);
+    } else {
+      showToast(data.msg, "error");
+    }
+  } catch (e) {
+    showToast("Error: " + e.message, "error");
+  }
+}
 </script>
 {% endblock %}

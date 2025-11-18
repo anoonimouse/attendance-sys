@@ -1,42 +1,40 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-  <div class="lg:col-span-2">
-    <div class="card flex items-center justify-between">
-      <div>
-        <h2 class="text-2xl font-bold">Teacher Portal</h2>
-        <div class="text-sm text-slate-500 mt-1">{{ current_user.email }}</div>
-      </div>
-      <a href="{{ url_for('teacher.create_room') }}" class="px-3 py-2 btn-primary rounded">New Room</a>
-    </div>
+{% extends "base.html" %}
 
-    <div class="mt-6 space-y-4">
-      {% for r in rooms %}
-      <div class="card flex items-center justify-between">
-        <div>
-          <div class="font-semibold">{{ r.name }}</div>
-          <div class="text-sm text-slate-500">Created {{ r.created_at }}</div>
+{% block title %}Manage Rooms{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-3xl font-bold" style="color: var(--navy);">My Rooms</h1>
+    <p class="text-slate-600">Manage your attendance rooms</p>
+  </div>
+  <div class="flex gap-3">
+    <a href="{{ url_for('teacher.create_room') }}" class="btn btn-cyan">➕ Create New Room</a>
+    <a href="{{ url_for('teacher.dashboard') }}" class="btn btn-secondary">← Back</a>
+  </div>
+</div>
+
+<div class="card">
+  {% if rooms %}
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {% for room in rooms %}
+        <div class="p-6 bg-slate-50 rounded-lg hover:shadow-md transition">
+          <h3 class="text-xl font-bold mb-2">{{ room.name }}</h3>
+          <p class="text-sm text-slate-600 mb-4">
+            Created {{ room.created_at.strftime('%b %d, %Y') }}
+          </p>
+          <div class="flex gap-2">
+            <a href="{{ url_for('main.room_detail', room_id=room.id) }}" class="btn btn-secondary btn-sm">View Details</a>
+          </div>
         </div>
-        <div class="flex items-center gap-3">
-          <a href="{{ url_for('teacher.open_slot') }}" class="px-3 py-2 border rounded">Open Slot</a>
-          <!-- you can expand with manage/edit -->
-        </div>
-      </div>
-      {% else %}
-        <div class="card">No rooms yet.</div>
       {% endfor %}
     </div>
-  </div>
-
-  <div>
-    <div class="card">
-      <h4 class="font-semibold">Stats</h4>
-      <div class="mt-4 space-y-2 text-sm text-slate-600">
-        <div>Total Rooms: 3</div>
-        <div>Total Students: 65</div>
-        <div>Avg Attendance: 92%</div>
-      </div>
+  {% else %}
+    <div class="text-center py-12">
+      <div class="text-6xl mb-4">🏛️</div>
+      <p class="text-xl text-slate-600 mb-4">No rooms yet</p>
+      <a href="{{ url_for('teacher.create_room') }}" class="btn btn-cyan">Create Your First Room</a>
     </div>
-  </div>
+  {% endif %}
 </div>
 {% endblock %}
