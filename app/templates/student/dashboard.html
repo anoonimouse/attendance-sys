@@ -21,9 +21,9 @@
         <div>
           <div class="text-sm font-semibold">Active Attendance Session <span class="ml-3 badge-active">Active</span></div>
           {% if active %}
-            <div class="text-lg font-semibold mt-2 text-[var(--cyan)]">{{ active.room_id }} - Session</div>
+            <div class="text-lg font-semibold mt-2 text-[var(--cyan)]">{{ active.room.name }}</div>
             <div class="mt-4 grid grid-cols-2 gap-3 text-sm text-slate-600">
-              <div>Instructor:</div><div>Dr. Sarah Johnson</div>
+              <div>Instructor:</div><div>{{ active.opened_by_user.name }}</div>
               <div>Time Remaining:</div><div id="time-remaining">calculating...</div>
               <div>Started:</div><div>{{ active.start_time }}</div>
             </div>

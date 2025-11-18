@@ -25,11 +25,27 @@ def init_oauth(app):
 
 
 # -----------------------
-# LOGIN ROUTE
+# LOGIN PAGE
 # -----------------------
 
 @auth_bp.route("/login")
 def login():
+    """Display login page"""
+    from flask import render_template
+    # If already logged in, redirect to appropriate dashboard
+    if current_user.is_authenticated:
+        return redirect(url_for("main.dashboard"))
+    
+    return render_template("login.html")
+
+
+# -----------------------
+# LOGIN WITH GOOGLE
+# -----------------------
+
+@auth_bp.route("/login/google")
+def login_google():
+    """Initiate Google OAuth flow"""
     # If already logged in, redirect to appropriate dashboard
     if current_user.is_authenticated:
         return redirect(url_for("main.dashboard"))
@@ -39,7 +55,7 @@ def login():
         return oauth.google.authorize_redirect(redirect_uri)
     except Exception as e:
         flash(f"OAuth initialization failed: {e}", "danger")
-        return redirect("/")
+        return redirect(url_for("auth.login"))
 
 
 # -----------------------
@@ -106,10 +122,15 @@ def callback():
             flash("Your account has been banned. Contact administrator.", "danger")
             return redirect("/")
 
+        # 8️⃣ Update last login
+        from datetime import datetime
+        user.last_login = datetime.utcnow()
+        db.session.commit()
+
         login_user(user)
         flash("Logged in successfully.", "success")
         
-        # 8️⃣ Route based on role
+        # 9️⃣ Route based on role
         if user.role == "teacher":
             return redirect(url_for("teacher.dashboard"))
         elif user.role == "admin":

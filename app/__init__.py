@@ -1,7 +1,7 @@
 # app/__init__.py
 
 import os
-from flask import Flask
+from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from dotenv import load_dotenv
@@ -81,6 +81,17 @@ def create_app():
     for blueprint_name, blueprint in app.blueprints.items():
         print(f"✓ {blueprint_name:15} -> {blueprint.url_prefix or '/'}")
     print("="*60 + "\n")
+
+    # -------------------------
+    # Error Handlers
+    # -------------------------
+    @app.errorhandler(403)
+    def forbidden(e):
+        return render_template("errors/403.html"), 403
+
+    @app.errorhandler(404)
+    def not_found(e):
+        return render_template("errors/404.html"), 404
 
     # -------------------------
     # Create DB Tables

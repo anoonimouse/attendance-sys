@@ -121,3 +121,20 @@ def unban(uid):
     u.unban()
     db.session.commit()
     return jsonify({"ok": True})
+
+
+@admin_bp.route("/route-tester")
+@login_required
+@admin_required
+def route_tester():
+    """Display all registered routes for debugging"""
+    routes = []
+    for rule in current_app.url_map.iter_rules():
+        routes.append({
+            'endpoint': rule.endpoint,
+            'methods': ', '.join(rule.methods),
+            'path': str(rule)
+        })
+    
+    routes.sort(key=lambda x: x['path'])
+    return render_template("admin/route_tester.html", routes=routes)

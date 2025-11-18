@@ -23,48 +23,124 @@
   </style>
 </head>
 <body>
-  <nav class="bg-white shadow-sm">
-    <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-      
-      <!-- LEFT SIDE -->
-      <div class="flex items-center space-x-3">
-        <div class="text-2xl font-bold">Attendance</div>
-        <div class="text-sm text-slate-500">Secure attendance management system</div>
-
-        <!-- ADMIN LINK (only if user is admin) -->
-        {% if current_user.is_authenticated and current_user.role == 'admin' %}
-          <a href="{{ url_for('admin.index') }}"
-             class="ml-6 text-sm font-semibold text-[var(--cyan)] hover:underline">
-             Admin Dashboard
-          </a>
-        {% endif %}
-      </div>
-
-      <!-- RIGHT SIDE -->
-      <div>
-        {% if current_user.is_authenticated %}
-          <div class="flex items-center gap-3">
-
-            <!-- Avatar -->
-            <div class="w-10 h-10 bg-[#1E293B] text-white rounded-full flex items-center justify-center font-semibold">
-              {{ current_user.name.split(' ')[0][:1] }}{{ (current_user.name.split(' ')[1][:1] if current_user.name.split(' ')|length>1 else '') }}
+  <nav class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-4">
+      <div class="flex items-center justify-between">
+        
+        <!-- LEFT SIDE - Logo & Nav -->
+        <div class="flex items-center gap-8">
+          <a href="/" class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--cyan)] to-[var(--navy)] flex items-center justify-center text-white font-bold text-lg">
+              A
             </div>
+            <span class="text-xl font-bold text-slate-900">Attendance</span>
+          </a>
 
-            <!-- Email -->
-            <div class="text-sm text-slate-600">{{ current_user.email }}</div>
-
-            <!-- Logout -->
-            <a href="{{ url_for('auth.logout') }}"
-               class="ml-4 border px-3 py-1 rounded text-sm hover:bg-slate-100">
-               Logout
+          {% if current_user.is_authenticated %}
+          <div class="hidden md:flex items-center gap-6">
+            <a href="{{ url_for('main.dashboard') }}" 
+               class="text-sm text-slate-700 hover:text-[var(--cyan)] transition">
+              Dashboard
             </a>
+
+            {% if current_user.role == 'student' %}
+              <a href="{{ url_for('main.history') }}" 
+                 class="text-sm text-slate-700 hover:text-[var(--cyan)] transition">
+                My History
+              </a>
+            {% elif current_user.role == 'teacher' %}
+              <a href="{{ url_for('teacher.rooms') }}" 
+                 class="text-sm text-slate-700 hover:text-[var(--cyan)] transition">
+                Rooms
+              </a>
+              <a href="{{ url_for('teacher.open_slot') }}" 
+                 class="text-sm text-slate-700 hover:text-[var(--cyan)] transition">
+                Start Session
+              </a>
+            {% elif current_user.role == 'admin' %}
+              <a href="{{ url_for('admin.index') }}" 
+                 class="text-sm text-slate-700 hover:text-[var(--cyan)] transition">
+                Admin Panel
+              </a>
+              <a href="{{ url_for('admin.users') }}" 
+                 class="text-sm text-slate-700 hover:text-[var(--cyan)] transition">
+                Manage Users
+              </a>
+            {% endif %}
           </div>
+          {% endif %}
+        </div>
 
-        {% else %}
-          <a href="{{ url_for('auth.login') }}" class="px-4 py-2 btn-primary rounded">Sign in</a>
-        {% endif %}
+        <!-- RIGHT SIDE - User Menu -->
+        <div>
+          {% if current_user.is_authenticated %}
+            <div class="flex items-center gap-4">
+              <!-- Role Badge -->
+              {% if current_user.role == 'admin' %}
+                <span class="hidden md:inline-block px-2 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">
+                  Admin
+                </span>
+              {% elif current_user.role == 'teacher' %}
+                <span class="hidden md:inline-block px-2 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
+                  Teacher
+                </span>
+              {% else %}
+                <span class="hidden md:inline-block px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
+                  Student
+                </span>
+              {% endif %}
+
+              <!-- User Dropdown -->
+              <div class="relative group">
+                <button class="flex items-center gap-2 hover:opacity-80 transition">
+                  <div class="w-9 h-9 bg-gradient-to-br from-[var(--cyan)] to-[var(--navy)] text-white rounded-full flex items-center justify-center font-semibold text-sm">
+                    {{ current_user.name.split(' ')[0][:1] }}{{ (current_user.name.split(' ')[1][:1] if current_user.name.split(' ')|length>1 else '') }}
+                  </div>
+                  <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                  </svg>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <div class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border hidden group-hover:block">
+                  <div class="p-3 border-b">
+                    <p class="font-semibold text-sm text-slate-900">{{ current_user.name }}</p>
+                    <p class="text-xs text-slate-500">{{ current_user.email }}</p>
+                  </div>
+                  <div class="py-2">
+                    <a href="{{ url_for('main.account') }}" 
+                       class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                      👤 My Account
+                    </a>
+                    <a href="{{ url_for('main.dashboard') }}" 
+                       class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                      📊 Dashboard
+                    </a>
+                    {% if current_user.role == 'admin' %}
+                    <a href="{{ url_for('admin.route_tester') }}" 
+                       class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                      🔧 Route Tester
+                    </a>
+                    {% endif %}
+                  </div>
+                  <div class="border-t py-2">
+                    <a href="{{ url_for('auth.logout') }}" 
+                       class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                      🚪 Logout
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% else %}
+            <a href="{{ url_for('auth.login') }}" 
+               class="px-6 py-2 btn-primary rounded-lg hover:opacity-90 transition">
+              Sign In
+            </a>
+          {% endif %}
+        </div>
+
       </div>
-
     </div>
   </nav>
 

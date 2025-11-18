@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <div class="mb-6">
+    <a href="{{ url_for('main.dashboard') }}" class="text-sm text-[var(--cyan)] hover:underline">
+      ← Back to Dashboard
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="flex items-start gap-6">
+      <!-- Avatar -->
+      <div class="w-24 h-24 rounded-full bg-gradient-to-br from-[var(--cyan)] to-[var(--navy)] text-white flex items-center justify-center text-3xl font-bold">
+        {{ user.name.split(' ')[0][:1] }}{{ (user.name.split(' ')[1][:1] if user.name.split(' ')|length>1 else '') }}
+      </div>
+
+      <!-- User Info -->
+      <div class="flex-1">
+        <h1 class="text-3xl font-bold text-slate-900">{{ user.name }}</h1>
+        <p class="text-slate-600 mt-1">{{ user.email }}</p>
+
+        <!-- Role Badge -->
+        <div class="mt-3">
+          {% if user.role == 'admin' %}
+            <span class="px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-sm font-semibold">
+              👑 Administrator
+            </span>
+          {% elif user.role == 'teacher' %}
+            <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
+              🎓 Teacher
+            </span>
+          {% else %}
+            <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-semibold">
+              📚 Student
+            </span>
+          {% endif %}
+
+          {% if user.is_banned %}
+            <span class="ml-2 px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-semibold">
+              🚫 Banned
+            </span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Account Details -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <h3 class="text-sm font-semibold text-slate-500 uppercase">Account Created</h3>
+        <p class="mt-1 text-lg">{{ user.created_at.strftime('%B %d, %Y') }}</p>
+      </div>
+
+      <div>
+        <h3 class="text-sm font-semibold text-slate-500 uppercase">Last Login</h3>
+        <p class="mt-1 text-lg">
+          {% if user.last_login %}
+            {{ user.last_login.strftime('%B %d, %Y at %I:%M %p') }}
+          {% else %}
+            Never
+          {% endif %}
+        </p>
+      </div>
+
+      <div>
+        <h3 class="text-sm font-semibold text-slate-500 uppercase">User ID</h3>
+        <p class="mt-1 text-lg font-mono">#{{ user.id }}</p>
+      </div>
+
+      <div>
+        <h3 class="text-sm font-semibold text-slate-500 uppercase">Account Status</h3>
+        <p class="mt-1 text-lg">
+          {% if user.is_banned %}
+            <span class="text-red-600 font-semibold">Banned</span>
+          {% else %}
+            <span class="text-green-600 font-semibold">Active</span>
+          {% endif %}
+        </p>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mt-8 pt-6 border-t">
+      <h3 class="text-lg font-semibold mb-4">Quick Actions</h3>
+      <div class="flex gap-3">
+        <a href="{{ url_for('main.dashboard') }}" 
+           class="px-4 py-2 btn-primary rounded hover:opacity-90">
+          📊 Go to Dashboard
+        </a>
+        
+        {% if user.role == 'student' %}
+          <a href="{{ url_for('main.history') }}" 
+             class="px-4 py-2 border rounded hover:bg-slate-50">
+            📋 View Attendance History
+          </a>
+        {% elif user.role == 'teacher' %}
+          <a href="{{ url_for('teacher.rooms') }}" 
+             class="px-4 py-2 border rounded hover:bg-slate-50">
+            🏫 Manage Rooms
+          </a>
+        {% elif user.role == 'admin' %}
+          <a href="{{ url_for('admin.users') }}" 
+             class="px-4 py-2 border rounded hover:bg-slate-50">
+            👥 Manage Users
+          </a>
+        {% endif %}
+
+        <a href="{{ url_for('auth.logout') }}" 
+           class="px-4 py-2 border border-red-300 text-red-600 rounded hover:bg-red-50">
+          🚪 Logout
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
